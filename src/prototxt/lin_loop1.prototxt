@@ -1,0 +1,50 @@
+#lin_loop1
+#conv1_lin_loop1
+layer {
+  name : "Convolution_lin_loop1"
+  type : "Convolution"
+  convolution_param {
+    num_output: 256
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution_lin_loop1"
+  bottom : "residual_loop1"
+}
+#batchnorm_lin_loop1
+layer {
+  name : "BN_lin_loop1"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN_lin_loop1"
+  bottom: "Convolution_lin_loop1"
+}
+#relu_lin_loop1
+layer {
+  name : "ReLU_lin_loop1"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "lin_loop1"
+  bottom : "BN_lin_loop1"
+}
+

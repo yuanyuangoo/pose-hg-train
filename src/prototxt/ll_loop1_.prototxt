@@ -1,0 +1,27 @@
+#ll_loop1_
+layer {
+  name : "ll_loop1_"
+  type : "Convolution"
+  convolution_param {
+    num_output: 256
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "ll_loop1_"
+  bottom : "lin_loop1"
+}

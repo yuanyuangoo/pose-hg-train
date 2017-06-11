@@ -1,0 +1,15 @@
+#inter_loop1
+layer {
+  name : "inter_loop1"
+  type : "Data"
+  data_param {
+    DB_backend : LEVEL_DB
+  }
+  transform_param {
+    scale : 1
+    mirror : "false"
+    multiscale : "false"
+  }
+  top : "inter_loop1"
+  bottom : "r5"
+}

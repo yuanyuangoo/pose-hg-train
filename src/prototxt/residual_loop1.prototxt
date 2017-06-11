@@ -1,0 +1,177 @@
+#residual_loop1
+#inp_residual_loop1
+layer {
+  name : "inp_residual_loop1"
+  type : "Data"
+  data_param {
+    DB_backend : LEVEL_DB
+  }
+  transform_param {
+    scale : 1
+    mirror : "false"
+    multiscale : "false"
+  }
+  top : "inp_residual_loop1"
+  bottom: "low2_1_tag1"
+}
+#batchnorm1_residual_loop1
+layer {
+  name : "BN1_residual_loop1"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN1_residual_loop1"
+  bottom: "inp_residual_loop1"
+}
+#relu1_residual_loop1
+layer {
+  name : "ReLU1_residual_loop1"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU1_residual_loop1"
+  bottom : "BN1_residual_loop1"
+}
+#conv1_residual_loop1
+layer {
+  name : "Convolution1_residual_loop1"
+  type : "Convolution"
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution1_residual_loop1"
+  bottom : "ReLU1_residual_loop1"
+}
+#batchnorm2_residual_loop1
+layer {
+  name : "BN2_residual_loop1"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN2_residual_loop1"
+  bottom : "Convolution1_residual_loop1"
+}
+#relu2_residual_loop1
+layer {
+  name : "ReLU2_residual_loop1"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU2_residual_loop1"
+  bottom : "BN2_residual_loop1"
+}
+#conv2_residual_loop1
+layer {
+  name : "Convolution2_residual_loop1"
+  type : "Convolution"
+  convolution_param {
+    num_output: 128
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution2_residual_loop1"
+  bottom : "ReLU2_residual_loop1"
+}
+#batchnorm3_residual_loop1
+layer {
+  name : "BN3_residual_loop1"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN3_residual_loop1"
+  bottom : "Convolution2_residual_loop1"
+}
+#relu3_residual_loop1
+layer {
+  name : "ReLU3_residual_loop1"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU3_residual_loop1"
+  bottom : "BN3_residual_loop1"
+}
+#conv3_residual_loop1
+layer {
+  name : "Convolution3_residual_loop1"
+  type : "Convolution"
+  convolution_param {
+    num_output: 256
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution3_residual_loop1"
+  bottom : "ReLU3_residual_loop1"
+}
+#out_residual_loop1
+layer {
+  name : "out_residual_loop1"
+  type : "Data"
+  data_param {
+    DB_backend : LEVEL_DB
+  }
+  transform_param {
+    scale : 1
+    mirror : "false"
+    multiscale : "false"
+  }
+  top : "residual_loop1"
+  bottom : "Convolution3_residual_loop1"
+  bottom : "inp_residual_loop1"
+}
