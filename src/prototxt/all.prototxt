@@ -1,0 +1,608 @@
+
+name: "hourglass"
+#input
+layer {
+  name: "input"
+  type: "Input"
+  top: "input"
+  input_param { shape: { dim: 1 dim: 3 dim: 256 dim: 256 } }
+}
+#cnv1_
+layer {
+    name: "cnv1_"
+    type: "Convolution"
+    bottom: "input"
+    top: "cnv1_"
+    # learning rate and decay multipliers for the filters
+    param { lr_mult: 1 decay_mult: 1 }
+    # learning rate and decay multipliers for the biases
+    param { lr_mult: 2 decay_mult: 0 }
+    convolution_param {
+      num_output: 64     # learn 64 filters
+      kernel_size: 7    # each filter is 7x7
+      stride: 2
+      pad: 3          # step 2 pixels between each filter application
+      weight_filler {
+        type: "gaussian" # initialize the filters from a Gaussian
+        std: 0.01        # distribution with stdev 0.01 (default mean: 0)
+      }
+      bias_filler {
+        type: "constant" # initialize the biases to zero (0)
+        value: 0
+      }
+    }
+  }
+#cnv1
+layers {
+  name: "BatchNorm_cnv1"
+  type: "BatchNorm"
+  bottom: "cnv1_"
+  top: "Relu"
+    param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+}
+layers {
+  name: "Relu_cnv1"
+  type: "RELU"
+  bottom: "Relu"
+  top: "cnv1"
+}
+#r1
+#batchnorm1_r1
+layer {
+  name : "BN1_r1"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN1_r1"
+  bottom: "cnv1"
+}
+#relu1_r1
+layer {
+  name : "ReLU1_r1"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU1_r1"
+  bottom : "BN1_r1"
+}
+#conv1_r1
+layer {
+  name : "Convolution1_r1"
+  type : "Convolution"
+  convolution_param {
+    num_output: 64
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution1_r1"
+  bottom : "ReLU1_r1"
+}
+#batchnorm2_r1
+layer {
+  name : "BN2_r1"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN2_r1"
+  bottom : "Convolution1_r1"
+}
+#relu2_r1
+layer {
+  name : "ReLU2_r1"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU2_r1"
+  bottom : "BN2_r1"
+}
+#conv2_r1
+layer {
+  name : "Convolution2_r1"
+  type : "Convolution"
+  convolution_param {
+    num_output: 64
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution2_r1"
+  bottom : "ReLU2_r1"
+}
+#batchnorm3_r1
+layer {
+  name : "BN3_r1"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN3_r1"
+  bottom : "Convolution2_r1"
+}
+#relu3_r1
+layer {
+  name : "ReLU3_r1"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU3_r1"
+  bottom : "BN3_r1"
+}
+#conv3_r1
+layer {
+  name : "Convolution3_r1"
+  type : "Convolution"
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution3_r1"
+  bottom : "ReLU3_r1"
+}
+#conv4_r1
+layer {
+  name : "Convolution4_r1"
+  type : "Convolution"
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution4_r1"
+  bottom : "cnv1"
+}
+#out_r1
+layer {
+  name : "out_r1"
+  type : "Data"
+  data_param {
+    DB_backend : LEVEL_DB
+  }
+  transform_param {
+    scale : 1
+    mirror : "false"
+    multiscale : "false"
+  }
+  top : "r1"
+  bottom : "Convolution3_r1"
+  bottom : "Convolution4_r1"
+}
+#pool
+layer {
+  name: "pool"
+  type: "Pooling"
+  bottom : "r1"
+  top: "pool"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+#r4
+#batchnorm1_r4
+layer {
+  name : "BN1_r4"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN1_r4"
+  bottom: "pool"
+}
+#relu1_r4
+layer {
+  name : "ReLU1_r4"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU1_r4"
+  bottom : "BN1_r4"
+}
+#conv1_r4
+layer {
+  name : "Convolution1_r4"
+  type : "Convolution"
+  convolution_param {
+    num_output: 64
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution1_r4"
+  bottom : "ReLU1_r4"
+}
+#batchnorm2_r4
+layer {
+  name : "BN2_r4"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN2_r4"
+  bottom : "Convolution1_r4"
+}
+#relu2_r4
+layer {
+  name : "ReLU2_r4"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU2_r4"
+  bottom : "BN2_r4"
+}
+#conv2_r4
+layer {
+  name : "Convolution2_r4"
+  type : "Convolution"
+  convolution_param {
+    num_output: 64
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution2_r4"
+  bottom : "ReLU2_r4"
+}
+#batchnorm3_r4
+layer {
+  name : "BN3_r4"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN3_r4"
+  bottom : "Convolution2_r4"
+}
+#relu3_r4
+layer {
+  name : "ReLU3_r4"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU3_r4"
+  bottom : "BN3_r4"
+}
+#conv3_r4
+layer {
+  name : "Convolution3_r4"
+  type : "Convolution"
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution3_r4"
+  bottom : "ReLU3_r4"
+}
+#out_r4
+layer {
+  name : "out_r4"
+  type : "Data"
+  data_param {
+    DB_backend : LEVEL_DB
+  }
+  transform_param {
+    scale : 1
+    mirror : "false"
+    multiscale : "false"
+  }
+  top : "r4"
+  bottom : "Convolution3_r4"
+  bottom : "pool"
+}
+#r5
+#batchnorm1_r5
+layer {
+  name : "BN1_r5"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN1_r5"
+  bottom: "r4"
+}
+#relu1_r5
+layer {
+  name : "ReLU1_r5"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU1_r5"
+  bottom : "BN1_r5"
+}
+#conv1_r5
+layer {
+  name : "Convolution1_r5"
+  type : "Convolution"
+  convolution_param {
+    num_output: 64
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution1_r5"
+  bottom : "ReLU1_r5"
+}
+#batchnorm2_r5
+layer {
+  name : "BN2_r5"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN2_r5"
+  bottom : "Convolution1_r5"
+}
+#relu2_r5
+layer {
+  name : "ReLU2_r5"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU2_r5"
+  bottom : "BN2_r5"
+}
+#conv2_r5
+layer {
+  name : "Convolution2_r5"
+  type : "Convolution"
+  convolution_param {
+    num_output: 64
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution2_r5"
+  bottom : "ReLU2_r5"
+}
+#batchnorm3_r5
+layer {
+  name : "BN3_r5"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN3_r5"
+  bottom : "Convolution2_r5"
+}
+#relu3_r5
+layer {
+  name : "ReLU3_r5"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU3_r5"
+  bottom : "BN3_r5"
+}
+#conv3_r5
+layer {
+  name : "Convolution3_r5"
+  type : "Convolution"
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution3_r5"
+  bottom : "ReLU3_r5"
+}
+#conv4_r5
+layer {
+  name : "Convolution4_r5"
+  type : "Convolution"
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution4_r5"
+  bottom : "r4"
+}
+#out_r5
+layer {
+  name : "out_r5"
+  type : "Data"
+  data_param {
+    DB_backend : LEVEL_DB
+  }
+  transform_param {
+    scale : 1
+    mirror : "false"
+    multiscale : "false"
+  }
+  top : "r5"
+  bottom : "Convolution3_r5"
+  bottom : "Convolution4_r5"
+}

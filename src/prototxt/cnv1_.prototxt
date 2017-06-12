@@ -1,0 +1,25 @@
+#cnv1
+layer {
+    name: "cnv1_"
+    type: "Convolution"
+    bottom: "input"
+    top: "cnv1_"
+    # learning rate and decay multipliers for the filters
+    param { lr_mult: 1 decay_mult: 1 }
+    # learning rate and decay multipliers for the biases
+    param { lr_mult: 2 decay_mult: 0 }
+    convolution_param {
+      num_output: 64     # learn 64 filters
+      kernel_size: 7    # each filter is 7x7
+      stride: 2
+      pad: 3          # step 2 pixels between each filter application
+      weight_filler {
+        type: "gaussian" # initialize the filters from a Gaussian
+        std: 0.01        # distribution with stdev 0.01 (default mean: 0)
+      }
+      bias_filler {
+        type: "constant" # initialize the biases to zero (0)
+        value: 0
+      }
+    }
+  }

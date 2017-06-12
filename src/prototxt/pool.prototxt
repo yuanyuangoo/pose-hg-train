@@ -1,0 +1,12 @@
+#pool
+layer {
+  name: "pool"
+  type: "Pooling"
+  bottom : "r1"
+  top: "pool"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}

@@ -1,0 +1,162 @@
+#r4
+#batchnorm1_r4
+layer {
+  name : "BN1_r4"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN1_r4"
+  bottom: "pool"
+}
+#relu1_r4
+layer {
+  name : "ReLU1_r4"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU1_r4"
+  bottom : "BN1_r4"
+}
+#conv1_r4
+layer {
+  name : "Convolution1_r4"
+  type : "Convolution"
+  convolution_param {
+    num_output: 64
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution1_r4"
+  bottom : "ReLU1_r4"
+}
+#batchnorm2_r4
+layer {
+  name : "BN2_r4"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN2_r4"
+  bottom : "Convolution1_r4"
+}
+#relu2_r4
+layer {
+  name : "ReLU2_r4"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU2_r4"
+  bottom : "BN2_r4"
+}
+#conv2_r4
+layer {
+  name : "Convolution2_r4"
+  type : "Convolution"
+  convolution_param {
+    num_output: 64
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution2_r4"
+  bottom : "ReLU2_r4"
+}
+#batchnorm3_r4
+layer {
+  name : "BN3_r4"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN3_r4"
+  bottom : "Convolution2_r4"
+}
+#relu3_r4
+layer {
+  name : "ReLU3_r4"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU3_r4"
+  bottom : "BN3_r4"
+}
+#conv3_r4
+layer {
+  name : "Convolution3_r4"
+  type : "Convolution"
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution3_r4"
+  bottom : "ReLU3_r4"
+}
+#out_r4
+layer {
+  name : "out_r4"
+  type : "Data"
+  data_param {
+    DB_backend : LEVEL_DB
+  }
+  transform_param {
+    scale : 1
+    mirror : "false"
+    multiscale : "false"
+  }
+  top : "r4"
+  bottom : "Convolution3_r4"
+  bottom : "pool"
+}

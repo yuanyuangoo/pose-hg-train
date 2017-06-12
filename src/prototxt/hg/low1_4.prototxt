@@ -1,0 +1,162 @@
+#low1_4_tag1
+#batchnorm1_tag1_low1_4
+layer {
+  name : "BN_tag1_low1_4"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN_tag1_low1_4"
+  bottom: "low1_pooling_4_tag1"
+}
+#relu1_tag1_low1_4
+layer {
+  name : "ReLU1_tag1_low1_4"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU1_tag1_low1_4"
+  bottom : "BN_tag1_low1_4"
+}
+#conv1_tag1_low1_4
+layer {
+  name : "Convolution_tag1_low1_4"
+  type : "Convolution"
+  convolution_param {
+    num_output: 128
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution_tag1_low1_4"
+  bottom : "ReLU1_tag1_low1_4"
+}
+#batchnorm2_tag1_low1_4
+layer {
+  name : "BN1_tag1_low1_4"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN1_tag1_low1_4"
+  bottom : "Convolution_tag1_low1_4"
+}
+#relu2_tag1_low1_4
+layer {
+  name : "ReLU2_tag1_low1_4"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU2_tag1_low1_4"
+  bottom : "BN1_tag1_low1_4"
+}
+#conv2_tag1_low1_4
+layer {
+  name : "Convolution1_tag1_low1_4"
+  type : "Convolution"
+  convolution_param {
+    num_output: 128
+    kernel_size: 3
+    stride: 1
+    pad: 1
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution1_tag1_low1_4"
+  bottom : "ReLU2_tag1_low1_4"
+}
+#batchnorm3_tag1_low1_4
+layer {
+  name : "BN2_tag1_low1_4"
+  type : "BN"
+  bn_param {
+    moving_average : "false"
+    decay : 0.05
+  }
+  top : "BN2_tag1_low1_4"
+  bottom : "Convolution1_tag1_low1_4"
+}
+#relu3_tag1_low1_4
+layer {
+  name : "ReLU3_tag1_low1_4"
+  type : "ReLU"
+  relu_param {
+    negative_slope : 0
+  }
+  top : "ReLU3_tag1_low1_4"
+  bottom : "BN2_tag1_low1_4"
+}
+#conv3_tag1_low1_4
+layer {
+  name : "Convolution2_tag1_low1_4"
+  type : "Convolution"
+  convolution_param {
+    num_output: 256
+    kernel_size: 1
+    stride: 1  
+    weight_filler {
+      type : "xavier"
+    }
+    bias_filler {
+      type : "constant"
+      value : 0
+    }
+    param {
+      lr_mult : 1
+      decay_mult : 1
+    }
+    param {
+      lr_mult : 2
+      decay_mult : 0
+    }
+  }
+  top : "Convolution2_tag1_low1_4"
+  bottom : "ReLU3_tag1_low1_4"
+}
+#out_tag1_low1_4
+layer {
+  name : "out_tag1_low1_4"
+  type : "Data"
+  data_param {
+    DB_backend : LEVEL_DB
+  }
+  transform_param {
+    scale : 1
+    mirror : "false"
+    multiscale : "false"
+  }
+  top : "low1_4_tag1"
+  bottom : "Convolution2_tag1_low1_4"
+  bottom : "low1_pooling_4_tag1"
+}

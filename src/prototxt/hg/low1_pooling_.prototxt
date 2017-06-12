@@ -1,0 +1,48 @@
+#low1_pooling_1
+layer {
+  name: "low1_pooling_1_tag1"
+  type: "Pooling"
+  bottom : "up1_1_tag1"
+  top: "low1_pooling_1_tag1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+#low1_pooling_2
+layer {
+  name: "low1_pooling_2_tag1"
+  type: "Pooling"
+  bottom : "up1_2_tag1"
+  top: "low1_pooling_2_tag1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+#low1_pooling_3_tag1
+layer {
+  name: "low1_pooling_3_tag1"
+  type: "Pooling"
+  bottom : "up1_3_tag1"
+  top: "low1_pooling_3_tag1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+#low1_pooling_4_tag1
+layer {
+  name: "low1_pooling_4_tag1"
+  type: "Pooling"
+  bottom : "up1_4_tag1"
+  top: "low1_pooling_4_tag1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}

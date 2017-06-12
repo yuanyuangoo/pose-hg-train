@@ -1,0 +1,48 @@
+#up2_1_tag1
+layer {
+  name: "up2_1_tag1" type: "Deconvolution"
+  bottom: "low3_1_tag1" top: "up2_1_tag1"
+  convolution_param {
+    kernel_size: 4 stride: 2
+    num_output: 512
+    pad: 1
+    weight_filler: { type: "bilinear" } bias_term: false
+  }
+  param { lr_mult: 0 decay_mult: 0 }
+}
+#up2_2_tag1
+layer {
+  name: "up2_2_tag1" type: "Deconvolution"
+  bottom: "low3_2_tag1" top: "up2_2_tag1"
+  convolution_param {
+    kernel_size: 4 stride: 2
+    num_output: 512
+    pad: 1
+    weight_filler: { type: "bilinear" } bias_term: false
+  }
+  param { lr_mult: 0 decay_mult: 0 }
+}
+#up2_3_tag1
+layer {
+  name: "up2_3_tag1" type: "Deconvolution"
+  bottom: "low3_3_tag1" top: "up2_3_tag1"
+  convolution_param {
+    kernel_size: 4 stride: 2
+    num_output: 512
+    pad: 1
+    weight_filler: { type: "bilinear" } bias_term: false
+  }
+  param { lr_mult: 0 decay_mult: 0 }
+}
+#up2_4_tag1
+layer {
+  name: "up2_4_tag1" type: "Deconvolution"
+  bottom: "low3_4_tag1" top: "up2_4_tag1"
+  convolution_param {
+    kernel_size: 4 stride: 2
+    num_output: 512
+    pad: 1
+    weight_filler: { type: "bilinear" } bias_term: false
+  }
+  param { lr_mult: 0 decay_mult: 0 }
+}

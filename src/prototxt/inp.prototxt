@@ -1,0 +1,8 @@
+
+name: "hourglass"
+layer {
+  name: "input"
+  type: "Input"
+  top: "input"
+  input_param { shape: { dim: 1 dim: 3 dim: 256 dim: 256 } }
+}

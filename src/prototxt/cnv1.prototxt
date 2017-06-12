@@ -1,0 +1,22 @@
+#cnv1
+layers {
+  name: "BatchNorm_cnv1"
+  type: "BatchNorm"
+  bottom: "cnv1_"
+  top: "Relu"
+    param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+}
+layers {
+  name: "Relu_cnv1"
+  type: "RELU"
+  bottom: "Relu"
+  top: "r1"
+}

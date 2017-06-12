@@ -1,0 +1,17 @@
+#low2_4_tag1
+layer {
+  name: "low2_4_tag1"
+  type : "Data"
+  bottom: "up2_3_tag1"
+  bottom: "up1_2_tag1"
+  top: "low2_4_tag1"
+  data_param {
+    DB_backend : LEVEL_DB
+  }
+  transform_param {
+    scale : 1
+    mirror : "false"
+    multiscale : "false"
+  }
+}
+
