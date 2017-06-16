@@ -10446,6 +10446,34 @@ decay_mult : 0
 top : "tmpout_loop4_"
 bottom : "tmpout_loop4"
 }
+#ll_loop4_
+layer {
+name : "ll_loop4_"
+type : "Convolution"
+convolution_param {
+num_output: 256
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "ll_loop4_"
+bottom : "lin_loop4"
+}
 #loop5
 #inter_loop5
 layer {

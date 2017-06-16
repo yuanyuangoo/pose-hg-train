@@ -12,8 +12,8 @@ require 'cutorch'
 require 'cudnn'
 require('transtorch')
 
---caffeNet = transTorch.loadCaffe('./all.prototxt')
---transTorch.toCaffe(l, caffeNet, "conv1")
+caffeNet = transTorch.loadCaffe('./all.prototxt')
+--transTorch.toCaffe(l, caffeNet, "cnv1_")
 
 net = torch.load('umich-stacked-hourglass.t7')
 for i = 1, 280 do
