@@ -16,7 +16,7 @@ require('transtorch')
 --transTorch.toCaffe(l, caffeNet, "conv1")
 
 net = torch.load('umich-stacked-hourglass.t7')
-for i = 1, 261 do
+for i = 1, 280 do
     print("layer", tostring(i))
     print(net:get(i))
 end
