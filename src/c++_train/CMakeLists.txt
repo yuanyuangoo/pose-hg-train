@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.1.0)
+set(CMAKE_CXX_STANDARD 11)
+project( train )
+find_package(Caffe)
+find_package(OpenCV)
+include_directories(${Caffe_INCLUDE_DIRS} ../../../caffe/release/include ../../../caffe/include /usr/local/cuda-8.0/targets/x86_64-linux/include)
+set(Caffe_LIBRARIES "/home/a/Downloads/caffe/release/lib/libcaffe.so")
+
+add_definitions(${Caffe_DEFINITIONS})
+find_package( OpenCV REQUIRED )
+add_executable( train caffe.cpp)
+target_link_libraries( train ${OpenCV_LIBS} ${Caffe_LIBRARIES})
