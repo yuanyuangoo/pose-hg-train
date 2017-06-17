@@ -38,15 +38,7 @@ name: "BatchNorm_cnv1"
 type: "BatchNorm"
 bottom: "cnv1_"
 top: "BatchNorm_cnv1"
-param {
-lr_mult: 0
-}
-param {
-lr_mult: 0
-}
-param {
-lr_mult: 0
-}
+
 }
 layer {
 name: "Relu_cnv1"

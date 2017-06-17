@@ -13,14 +13,16 @@ require 'cudnn'
 require('transtorch')
 require("csvigo")
 
---caffeNet = transTorch.loadCaffe('./prototxt/all.prototxt')
+caffeNet = transTorch.loadCaffe('./all.prototxt')
 --transTorch.toCaffe(l, caffeNet, "cnv1_")
 
---net = torch.load('./prototxt/umich-stacked-hourglass.t7')
+net = torch.load('./umich-stacked-hourglass.t7')
 
-layers = csvigo.load({path = "./prototxt/layers.csv", mode = "large"})
+layers = csvigo.load({path = "./layers.csv", mode = "large"})
 
-for i, v in ipairs(layers) do
+for i = 2, #layers do
+    v = layers[i]
+    print(i)
     if v[3] == "" then
         transTorch.toCaffe(net:get(tonumber(v[2])), caffeNet, v[1])
     elseif v[3] == "2" then
