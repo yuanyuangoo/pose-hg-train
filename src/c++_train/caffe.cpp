@@ -9,7 +9,6 @@ int main(int argc, char **argv) {
   Caffe::set_mode(Caffe::GPU);
   Caffe::SetDevice(0);
 
-  //! Note: 后文所有提到的net，都是这个net
   boost::shared_ptr<Net<float>> net(new caffe::Net<float>(proto, phase));
   return 0;
 }
