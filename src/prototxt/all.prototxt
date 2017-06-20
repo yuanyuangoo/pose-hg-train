@@ -1,10 +1,33 @@
 name: "hourglass"
 #input
+#layer {
+#name: "input"
+#type: ""
+#top: "input"
+#input_param { shape: { dim: 1 dim: 3 dim: 256 dim: 256 } }
+#}
 layer {
-name: "input"
-type: "Input"
-top: "input"
-input_param { shape: { dim: 1 dim: 3 dim: 256 dim: 256 } }
+  name: "mnist"
+  # Data layer loads leveldb or lmdb storage DBs for high-throughput.
+  type: "Data"
+  # the 1st top is the data itself: the name is only convention
+  top: "input"
+  # the 2nd top is the ground truth: the name is only convention
+  top: "label"
+  # the Data layer configuration
+  data_param {
+    # path to the DB
+    source: "examples/mnist/mnist_train_lmdb"
+    # type of DB: LEVELDB or LMDB (LMDB supports concurrent reads)
+    backend: LMDB
+    # batch processing improves efficiency.
+    batch_size: 64
+  }
+  # common data transformations
+  transform_param {
+    # feature scaling coefficient: this maps the [0, 255] MNIST data to [0, 1]
+    scale: 0.00390625
+  }
 }
 #cnv1_
 layer {
@@ -38,7 +61,15 @@ name: "BatchNorm_cnv1"
 type: "BatchNorm"
 bottom: "cnv1_"
 top: "BatchNorm_cnv1"
-
+param {
+lr_mult: 0
+}
+param {
+lr_mult: 0
+}
+param {
+lr_mult: 0
+}
 }
 layer {
 name: "Relu_cnv1"
@@ -605,10 +636,53 @@ bottom : "Convolution3_r5"
 bottom : "Convolution4_r5"
 }
 #loop1
+#inter_loop1
+layer {
+name : "inter_loop1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inter_loop1"
+bottom : "r5"
+}
 #hg_loop1
-#up1_1_loop1
+#inp_loop1
+layer {
+name : "inp_loop1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop1"
+bottom: "inter_loop1"
+}
+#up1_1_loop1
+#inp_loop1_up1_1
+layer {
+name : "inp_loop1_up1_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
+
+}
+top : "inp_loop1_up1_1"
+bottom: "inp_loop1"
+}
 #batchnorm1_loop1_up1_1
 layer {
 name : "BN1_loop1_up1_1"
@@ -618,7 +692,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop1_up1_1"
-bottom: "r5"
+bottom: "inp_loop1_up1_1"
 }
 #relu1_loop1_up1_1
 layer {
@@ -771,7 +845,7 @@ mirror : 0
 }
 top : "up1_1_loop1"
 bottom : "Convolution3_loop1_up1_1"
-bottom : "r5"
+bottom : "inp_loop1_up1_1"
 }
 #low1_pooling_1_loop1
 layer {
@@ -951,7 +1025,21 @@ bottom : "Convolution3_loop1_low1_1"
 bottom : "low1_pooling_1_loop1"
 }
 #up1_2_loop1
+#inp_loop1_up1_2
+layer {
+name : "inp_loop1_up1_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop1_up1_2"
+bottom: "low1_1_loop1"
+}
 #batchnorm1_loop1_up1_2
 layer {
 name : "BN1_loop1_up1_2"
@@ -961,7 +1049,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop1_up1_2"
-bottom: "low1_1_loop1"
+bottom: "inp_loop1_up1_2"
 }
 #relu1_loop1_up1_2
 layer {
@@ -1114,7 +1202,7 @@ mirror : 0
 }
 top : "up1_2_loop1"
 bottom : "Convolution3_loop1_up1_2"
-bottom : "low1_1_loop1"
+bottom : "inp_loop1_up1_2"
 }
 #low1_pooling_2_loop1
 layer {
@@ -1294,7 +1382,21 @@ bottom : "Convolution3_loop1_low1_2"
 bottom : "low1_pooling_2_loop1"
 }
 #up1_3_loop1
+#inp_loop1_up1_3
+layer {
+name : "inp_loop1_up1_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop1_up1_3"
+bottom: "low1_2_loop1"
+}
 #batchnorm1_loop1_up1_3
 layer {
 name : "BN1_loop1_up1_3"
@@ -1304,7 +1406,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop1_up1_3"
-bottom: "low1_2_loop1"
+bottom: "inp_loop1_up1_3"
 }
 #relu1_loop1_up1_3
 layer {
@@ -1457,7 +1559,7 @@ mirror : 0
 }
 top : "up1_3_loop1"
 bottom : "Convolution3_loop1_up1_3"
-bottom : "low1_2_loop1"
+bottom : "inp_loop1_up1_3"
 }
 #low1_pooling_3_loop1
 layer {
@@ -1637,7 +1739,21 @@ bottom : "Convolution3_loop1_low1_3"
 bottom : "low1_pooling_3_loop1"
 }
 #up1_4_loop1
+#inp_loop1_up1_4
+layer {
+name : "inp_loop1_up1_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop1_up1_4"
+bottom: "low1_3_loop1"
+}
 #batchnorm1_loop1_up1_4
 layer {
 name : "BN1_loop1_up1_4"
@@ -1647,7 +1763,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop1_up1_4"
-bottom: "low1_3_loop1"
+bottom: "inp_loop1_up1_4"
 }
 #relu1_loop1_up1_4
 layer {
@@ -1800,7 +1916,7 @@ mirror : 0
 }
 top : "up1_4_loop1"
 bottom : "Convolution3_loop1_up1_4"
-bottom : "low1_3_loop1"
+bottom : "inp_loop1_up1_4"
 }
 #low1_pooling_4_loop1
 layer {
@@ -1980,7 +2096,21 @@ bottom : "Convolution3_loop1_low1_4"
 bottom : "low1_pooling_4_loop1"
 }
 #low2_1_loop1
+#inp_loop1_low2_1
+layer {
+name : "inp_loop1_low2_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop1_low2_1"
+bottom: "low1_4_loop1"
+}
 #batchnorm1_loop1_low2_1
 layer {
 name : "BN1_loop1_low2_1"
@@ -1990,7 +2120,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop1_low2_1"
-bottom: "low1_4_loop1"
+bottom: "inp_loop1_low2_1"
 }
 #relu1_loop1_low2_1
 layer {
@@ -2143,10 +2273,24 @@ mirror : 0
 }
 top : "low2_1_loop1"
 bottom : "Convolution3_loop1_low2_1"
-bottom : "low1_4_loop1"
+bottom : "inp_loop1_low2_1"
 }
 #low3_1_loop1
+#inp_low3_1_loop1
+layer {
+name : "inp_loop1_low3_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop1_low3_1"
+bottom: "low2_1_loop1"
+}
 #batchnorm1_loop1_low3_1
 layer {
 name : "BN1_loop1_low3_1"
@@ -2156,7 +2300,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop1_low3_1"
-bottom: "low2_1_loop1"
+bottom: "inp_loop1_low3_1"
 }
 #relu1_loop1_low3_1
 layer {
@@ -2309,7 +2453,7 @@ mirror : 0
 }
 top : "low3_1_loop1"
 bottom : "Convolution3_loop1_low3_1"
-bottom : "low2_1_loop1"
+bottom : "inp_loop1_low3_1"
 }
 #up2_1_loop1
 layer {
@@ -2342,16 +2486,31 @@ mirror : 0
 }
 }
 #low3_2_loop1
+#inp_low3_2_loop1
+layer {
+name : "inp_loop1_low3_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop1_low3_2"
+bottom: "low2_2_loop1"
+}
 #batchnorm1_loop1_low3_2
 layer {
 name : "BN1_loop1_low3_2"
 type: "BatchNorm"
 batch_norm_param {
 
+
 }
 top : "BN1_loop1_low3_2"
-bottom: "low2_2_loop1"
+bottom: "inp_loop1_low3_2"
 }
 #relu1_loop1_low3_2
 layer {
@@ -2504,7 +2663,7 @@ mirror : 0
 }
 top : "low3_2_loop1"
 bottom : "Convolution3_loop1_low3_2"
-bottom : "low2_2_loop1"
+bottom : "inp_loop1_low3_2"
 }
 #up2_2_loop1
 layer {
@@ -2535,7 +2694,21 @@ mirror : 0
 }
 }
 #low3_3_loop1
+#inp_low3_3_loop1
+layer {
+name : "inp_loop1_low3_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop1_low3_3"
+bottom: "low2_3_loop1"
+}
 #batchnorm1_loop1_low3_3
 layer {
 name : "BN1_loop1_low3_3"
@@ -2545,7 +2718,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop1_low3_3"
-bottom: "low2_3_loop1"
+bottom: "inp_loop1_low3_3"
 }
 #relu1_loop1_low3_3
 layer {
@@ -2698,7 +2871,7 @@ mirror : 0
 }
 top : "low3_3_loop1"
 bottom : "Convolution3_loop1_low3_3"
-bottom : "low2_3_loop1"
+bottom : "inp_loop1_low3_3"
 }
 #up2_3_loop1
 layer {
@@ -2729,6 +2902,21 @@ mirror : 0
 }
 }
 #low3_4_loop1
+#inp_low3_4_loop1
+layer {
+name : "inp_loop1_low3_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
+
+}
+top : "inp_loop1_low3_4"
+bottom: "low2_4_loop1"
+}
 #batchnorm1_loop1_low3_4
 layer {
 name : "BN1_loop1_low3_4"
@@ -2738,7 +2926,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop1_low3_4"
-bottom: "low2_4_loop1"
+bottom: "inp_loop1_low3_4"
 }
 #relu1_loop1_low3_4
 layer {
@@ -2891,7 +3079,7 @@ mirror : 0
 }
 top : "low3_4_loop1"
 bottom : "Convolution3_loop1_low3_4"
-bottom : "low2_4_loop1"
+bottom : "inp_loop1_low3_4"
 }
 #up2_4_loop1
 layer {
@@ -2921,6 +3109,186 @@ mirror : 0
 
 }
 }
+#residual_loop1
+#inp_residual_loop1
+layer {
+name : "inp_residual_loop1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
+
+}
+top : "inp_residual_loop1"
+bottom: "hg_loop1"
+}
+#batchnorm1_residual_loop1
+layer {
+name : "BN1_residual_loop1"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN1_residual_loop1"
+bottom: "inp_residual_loop1"
+}
+#relu1_residual_loop1
+layer {
+name : "ReLU1_residual_loop1"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU1_residual_loop1"
+bottom : "BN1_residual_loop1"
+}
+#conv1_residual_loop1
+layer {
+name : "Convolution1_residual_loop1"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution1_residual_loop1"
+bottom : "ReLU1_residual_loop1"
+}
+#batchnorm2_residual_loop1
+layer {
+name : "BN2_residual_loop1"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN2_residual_loop1"
+bottom : "Convolution1_residual_loop1"
+}
+#relu2_residual_loop1
+layer {
+name : "ReLU2_residual_loop1"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU2_residual_loop1"
+bottom : "BN2_residual_loop1"
+}
+#conv2_residual_loop1
+layer {
+name : "Convolution2_residual_loop1"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 3
+stride: 1
+pad: 1
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution2_residual_loop1"
+bottom : "ReLU2_residual_loop1"
+}
+#batchnorm3_residual_loop1
+layer {
+name : "BN3_residual_loop1"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN3_residual_loop1"
+bottom : "Convolution2_residual_loop1"
+}
+#relu3_residual_loop1
+layer {
+name : "ReLU3_residual_loop1"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU3_residual_loop1"
+bottom : "BN3_residual_loop1"
+}
+#conv3_residual_loop1
+layer {
+name : "Convolution3_residual_loop1"
+type : "Convolution"
+convolution_param {
+num_output: 256
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution3_residual_loop1"
+bottom : "ReLU3_residual_loop1"
+}
+#out_residual_loop1
+layer {
+name : "out_residual_loop1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
+
+}
+top : "residual_loop1"
+bottom : "Convolution3_residual_loop1"
+bottom : "inp_residual_loop1"
+}
 #lin_loop1
 #conv1_lin_loop1
 layer {
@@ -2948,7 +3316,7 @@ decay_mult : 0
 }
 
 top : "Convolution_lin_loop1"
-bottom : "hg_loop1"
+bottom : "residual_loop1"
 }
 #batchnorm_lin_loop1
 layer {
@@ -3069,12 +3437,42 @@ mirror : 0
 
 }
 top : "inter_loop2"
-bottom : "r5"
+bottom : "inter_loop1"
 bottom : "tmpout_loop1_"
 bottom : "ll_loop1_"
 }
 #hg_loop2
+#inp_loop2
+layer {
+name : "inp_loop2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop2"
+bottom: "inter_loop2"
+}
+#up1_1_loop2
+#inp_loop2_up1_1
+layer {
+name : "inp_loop2_up1_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
+
+}
+top : "inp_loop2_up1_1"
+bottom: "inp_loop2"
+}
 #batchnorm1_loop2_up1_1
 layer {
 name : "BN1_loop2_up1_1"
@@ -3084,7 +3482,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop2_up1_1"
-bottom: "inter_loop2"
+bottom: "inp_loop2_up1_1"
 }
 #relu1_loop2_up1_1
 layer {
@@ -3237,7 +3635,7 @@ mirror : 0
 }
 top : "up1_1_loop2"
 bottom : "Convolution3_loop2_up1_1"
-bottom : "inter_loop2"
+bottom : "inp_loop2_up1_1"
 }
 #low1_pooling_1_loop2
 layer {
@@ -3417,7 +3815,21 @@ bottom : "Convolution3_loop2_low1_1"
 bottom : "low1_pooling_1_loop2"
 }
 #up1_2_loop2
+#inp_loop2_up1_2
+layer {
+name : "inp_loop2_up1_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop2_up1_2"
+bottom: "low1_1_loop2"
+}
 #batchnorm1_loop2_up1_2
 layer {
 name : "BN1_loop2_up1_2"
@@ -3427,7 +3839,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop2_up1_2"
-bottom: "low1_1_loop2"
+bottom: "inp_loop2_up1_2"
 }
 #relu1_loop2_up1_2
 layer {
@@ -3580,7 +3992,7 @@ mirror : 0
 }
 top : "up1_2_loop2"
 bottom : "Convolution3_loop2_up1_2"
-bottom : "low1_1_loop2"
+bottom : "inp_loop2_up1_2"
 }
 #low1_pooling_2_loop2
 layer {
@@ -3760,7 +4172,21 @@ bottom : "Convolution3_loop2_low1_2"
 bottom : "low1_pooling_2_loop2"
 }
 #up1_3_loop2
+#inp_loop2_up1_3
+layer {
+name : "inp_loop2_up1_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop2_up1_3"
+bottom: "low1_2_loop2"
+}
 #batchnorm1_loop2_up1_3
 layer {
 name : "BN1_loop2_up1_3"
@@ -3770,7 +4196,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop2_up1_3"
-bottom: "low1_2_loop2"
+bottom: "inp_loop2_up1_3"
 }
 #relu1_loop2_up1_3
 layer {
@@ -3923,7 +4349,7 @@ mirror : 0
 }
 top : "up1_3_loop2"
 bottom : "Convolution3_loop2_up1_3"
-bottom : "low1_2_loop2"
+bottom : "inp_loop2_up1_3"
 }
 #low1_pooling_3_loop2
 layer {
@@ -4103,7 +4529,21 @@ bottom : "Convolution3_loop2_low1_3"
 bottom : "low1_pooling_3_loop2"
 }
 #up1_4_loop2
+#inp_loop2_up1_4
+layer {
+name : "inp_loop2_up1_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop2_up1_4"
+bottom: "low1_3_loop2"
+}
 #batchnorm1_loop2_up1_4
 layer {
 name : "BN1_loop2_up1_4"
@@ -4113,7 +4553,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop2_up1_4"
-bottom: "low1_3_loop2"
+bottom: "inp_loop2_up1_4"
 }
 #relu1_loop2_up1_4
 layer {
@@ -4266,7 +4706,7 @@ mirror : 0
 }
 top : "up1_4_loop2"
 bottom : "Convolution3_loop2_up1_4"
-bottom : "low1_3_loop2"
+bottom : "inp_loop2_up1_4"
 }
 #low1_pooling_4_loop2
 layer {
@@ -4446,7 +4886,21 @@ bottom : "Convolution3_loop2_low1_4"
 bottom : "low1_pooling_4_loop2"
 }
 #low2_1_loop2
+#inp_loop2_low2_1
+layer {
+name : "inp_loop2_low2_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop2_low2_1"
+bottom: "low1_4_loop2"
+}
 #batchnorm1_loop2_low2_1
 layer {
 name : "BN1_loop2_low2_1"
@@ -4456,7 +4910,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop2_low2_1"
-bottom: "low1_4_loop2"
+bottom: "inp_loop2_low2_1"
 }
 #relu1_loop2_low2_1
 layer {
@@ -4609,10 +5063,24 @@ mirror : 0
 }
 top : "low2_1_loop2"
 bottom : "Convolution3_loop2_low2_1"
-bottom : "low1_4_loop2"
+bottom : "inp_loop2_low2_1"
 }
 #low3_1_loop2
+#inp_low3_1_loop2
+layer {
+name : "inp_loop2_low3_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop2_low3_1"
+bottom: "low2_1_loop2"
+}
 #batchnorm1_loop2_low3_1
 layer {
 name : "BN1_loop2_low3_1"
@@ -4622,7 +5090,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop2_low3_1"
-bottom: "low2_1_loop2"
+bottom: "inp_loop2_low3_1"
 }
 #relu1_loop2_low3_1
 layer {
@@ -4775,7 +5243,7 @@ mirror : 0
 }
 top : "low3_1_loop2"
 bottom : "Convolution3_loop2_low3_1"
-bottom : "low2_1_loop2"
+bottom : "inp_loop2_low3_1"
 }
 #up2_1_loop2
 layer {
@@ -4808,7 +5276,21 @@ mirror : 0
 }
 }
 #low3_2_loop2
+#inp_low3_2_loop2
+layer {
+name : "inp_loop2_low3_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop2_low3_2"
+bottom: "low2_2_loop2"
+}
 #batchnorm1_loop2_low3_2
 layer {
 name : "BN1_loop2_low3_2"
@@ -4818,7 +5300,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop2_low3_2"
-bottom: "low2_2_loop2"
+bottom: "inp_loop2_low3_2"
 }
 #relu1_loop2_low3_2
 layer {
@@ -4971,7 +5453,7 @@ mirror : 0
 }
 top : "low3_2_loop2"
 bottom : "Convolution3_loop2_low3_2"
-bottom : "low2_2_loop2"
+bottom : "inp_loop2_low3_2"
 }
 #up2_2_loop2
 layer {
@@ -5002,7 +5484,21 @@ mirror : 0
 }
 }
 #low3_3_loop2
+#inp_low3_3_loop2
+layer {
+name : "inp_loop2_low3_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop2_low3_3"
+bottom: "low2_3_loop2"
+}
 #batchnorm1_loop2_low3_3
 layer {
 name : "BN1_loop2_low3_3"
@@ -5012,7 +5508,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop2_low3_3"
-bottom: "low2_3_loop2"
+bottom: "inp_loop2_low3_3"
 }
 #relu1_loop2_low3_3
 layer {
@@ -5165,7 +5661,7 @@ mirror : 0
 }
 top : "low3_3_loop2"
 bottom : "Convolution3_loop2_low3_3"
-bottom : "low2_3_loop2"
+bottom : "inp_loop2_low3_3"
 }
 #up2_3_loop2
 layer {
@@ -5196,7 +5692,21 @@ mirror : 0
 }
 }
 #low3_4_loop2
+#inp_low3_4_loop2
+layer {
+name : "inp_loop2_low3_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop2_low3_4"
+bottom: "low2_4_loop2"
+}
 #batchnorm1_loop2_low3_4
 layer {
 name : "BN1_loop2_low3_4"
@@ -5206,7 +5716,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop2_low3_4"
-bottom: "low2_4_loop2"
+bottom: "inp_loop2_low3_4"
 }
 #relu1_loop2_low3_4
 layer {
@@ -5359,7 +5869,7 @@ mirror : 0
 }
 top : "low3_4_loop2"
 bottom : "Convolution3_loop2_low3_4"
-bottom : "low2_4_loop2"
+bottom : "inp_loop2_low3_4"
 }
 #up2_4_loop2
 layer {
@@ -5389,7 +5899,186 @@ mirror : 0
 
 }
 }
+#residual_loop2
+#inp_residual_loop2
+layer {
+name : "inp_residual_loop2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_residual_loop2"
+bottom: "hg_loop2"
+}
+#batchnorm1_residual_loop2
+layer {
+name : "BN1_residual_loop2"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN1_residual_loop2"
+bottom: "inp_residual_loop2"
+}
+#relu1_residual_loop2
+layer {
+name : "ReLU1_residual_loop2"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU1_residual_loop2"
+bottom : "BN1_residual_loop2"
+}
+#conv1_residual_loop2
+layer {
+name : "Convolution1_residual_loop2"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution1_residual_loop2"
+bottom : "ReLU1_residual_loop2"
+}
+#batchnorm2_residual_loop2
+layer {
+name : "BN2_residual_loop2"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN2_residual_loop2"
+bottom : "Convolution1_residual_loop2"
+}
+#relu2_residual_loop2
+layer {
+name : "ReLU2_residual_loop2"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU2_residual_loop2"
+bottom : "BN2_residual_loop2"
+}
+#conv2_residual_loop2
+layer {
+name : "Convolution2_residual_loop2"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 3
+stride: 1
+pad: 1
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution2_residual_loop2"
+bottom : "ReLU2_residual_loop2"
+}
+#batchnorm3_residual_loop2
+layer {
+name : "BN3_residual_loop2"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN3_residual_loop2"
+bottom : "Convolution2_residual_loop2"
+}
+#relu3_residual_loop2
+layer {
+name : "ReLU3_residual_loop2"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU3_residual_loop2"
+bottom : "BN3_residual_loop2"
+}
+#conv3_residual_loop2
+layer {
+name : "Convolution3_residual_loop2"
+type : "Convolution"
+convolution_param {
+num_output: 256
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution3_residual_loop2"
+bottom : "ReLU3_residual_loop2"
+}
+#out_residual_loop2
+layer {
+name : "out_residual_loop2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
+
+}
+top : "residual_loop2"
+bottom : "Convolution3_residual_loop2"
+bottom : "inp_residual_loop2"
+}
 #lin_loop2
 #conv1_lin_loop2
 layer {
@@ -5417,7 +6106,7 @@ decay_mult : 0
 }
 
 top : "Convolution_lin_loop2"
-bottom : "hg_loop2"
+bottom : "residual_loop2"
 }
 #batchnorm_lin_loop2
 layer {
@@ -5543,9 +6232,37 @@ bottom : "tmpout_loop2_"
 bottom : "ll_loop2_"
 }
 #hg_loop3
+#inp_loop3
+layer {
+name : "inp_loop3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop3"
+bottom: "inter_loop3"
+}
 #up1_1_loop3
+#inp_loop3_up1_1
+layer {
+name : "inp_loop3_up1_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop3_up1_1"
+bottom: "inp_loop3"
+}
 #batchnorm1_loop3_up1_1
 layer {
 name : "BN1_loop3_up1_1"
@@ -5555,7 +6272,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop3_up1_1"
-bottom: "inter_loop3"
+bottom: "inp_loop3_up1_1"
 }
 #relu1_loop3_up1_1
 layer {
@@ -5708,7 +6425,7 @@ mirror : 0
 }
 top : "up1_1_loop3"
 bottom : "Convolution3_loop3_up1_1"
-bottom : "inter_loop3"
+bottom : "inp_loop3_up1_1"
 }
 #low1_pooling_1_loop3
 layer {
@@ -5888,7 +6605,21 @@ bottom : "Convolution3_loop3_low1_1"
 bottom : "low1_pooling_1_loop3"
 }
 #up1_2_loop3
+#inp_loop3_up1_2
+layer {
+name : "inp_loop3_up1_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop3_up1_2"
+bottom: "low1_1_loop3"
+}
 #batchnorm1_loop3_up1_2
 layer {
 name : "BN1_loop3_up1_2"
@@ -5898,7 +6629,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop3_up1_2"
-bottom: "low1_1_loop3"
+bottom: "inp_loop3_up1_2"
 }
 #relu1_loop3_up1_2
 layer {
@@ -6051,7 +6782,7 @@ mirror : 0
 }
 top : "up1_2_loop3"
 bottom : "Convolution3_loop3_up1_2"
-bottom : "low1_1_loop3"
+bottom : "inp_loop3_up1_2"
 }
 #low1_pooling_2_loop3
 layer {
@@ -6231,7 +6962,21 @@ bottom : "Convolution3_loop3_low1_2"
 bottom : "low1_pooling_2_loop3"
 }
 #up1_3_loop3
+#inp_loop3_up1_3
+layer {
+name : "inp_loop3_up1_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop3_up1_3"
+bottom: "low1_2_loop3"
+}
 #batchnorm1_loop3_up1_3
 layer {
 name : "BN1_loop3_up1_3"
@@ -6241,7 +6986,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop3_up1_3"
-bottom: "low1_2_loop3"
+bottom: "inp_loop3_up1_3"
 }
 #relu1_loop3_up1_3
 layer {
@@ -6394,7 +7139,7 @@ mirror : 0
 }
 top : "up1_3_loop3"
 bottom : "Convolution3_loop3_up1_3"
-bottom : "low1_2_loop3"
+bottom : "inp_loop3_up1_3"
 }
 #low1_pooling_3_loop3
 layer {
@@ -6574,7 +7319,21 @@ bottom : "Convolution3_loop3_low1_3"
 bottom : "low1_pooling_3_loop3"
 }
 #up1_4_loop3
+#inp_loop3_up1_4
+layer {
+name : "inp_loop3_up1_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop3_up1_4"
+bottom: "low1_3_loop3"
+}
 #batchnorm1_loop3_up1_4
 layer {
 name : "BN1_loop3_up1_4"
@@ -6584,7 +7343,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop3_up1_4"
-bottom: "low1_3_loop3"
+bottom: "inp_loop3_up1_4"
 }
 #relu1_loop3_up1_4
 layer {
@@ -6737,7 +7496,7 @@ mirror : 0
 }
 top : "up1_4_loop3"
 bottom : "Convolution3_loop3_up1_4"
-bottom : "low1_3_loop3"
+bottom : "inp_loop3_up1_4"
 }
 #low1_pooling_4_loop3
 layer {
@@ -6917,7 +7676,21 @@ bottom : "Convolution3_loop3_low1_4"
 bottom : "low1_pooling_4_loop3"
 }
 #low2_1_loop3
+#inp_loop3_low2_1
+layer {
+name : "inp_loop3_low2_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop3_low2_1"
+bottom: "low1_4_loop3"
+}
 #batchnorm1_loop3_low2_1
 layer {
 name : "BN1_loop3_low2_1"
@@ -6927,7 +7700,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop3_low2_1"
-bottom: "low1_4_loop3"
+bottom: "inp_loop3_low2_1"
 }
 #relu1_loop3_low2_1
 layer {
@@ -7080,10 +7853,24 @@ mirror : 0
 }
 top : "low2_1_loop3"
 bottom : "Convolution3_loop3_low2_1"
-bottom : "low1_4_loop3"
+bottom : "inp_loop3_low2_1"
 }
 #low3_1_loop3
+#inp_low3_1_loop3
+layer {
+name : "inp_loop3_low3_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop3_low3_1"
+bottom: "low2_1_loop3"
+}
 #batchnorm1_loop3_low3_1
 layer {
 name : "BN1_loop3_low3_1"
@@ -7093,7 +7880,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop3_low3_1"
-bottom: "low2_1_loop3"
+bottom: "inp_loop3_low3_1"
 }
 #relu1_loop3_low3_1
 layer {
@@ -7246,7 +8033,7 @@ mirror : 0
 }
 top : "low3_1_loop3"
 bottom : "Convolution3_loop3_low3_1"
-bottom : "low2_1_loop3"
+bottom : "inp_loop3_low3_1"
 }
 #up2_1_loop3
 layer {
@@ -7279,7 +8066,21 @@ mirror : 0
 }
 }
 #low3_2_loop3
+#inp_low3_2_loop3
+layer {
+name : "inp_loop3_low3_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop3_low3_2"
+bottom: "low2_2_loop3"
+}
 #batchnorm1_loop3_low3_2
 layer {
 name : "BN1_loop3_low3_2"
@@ -7289,7 +8090,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop3_low3_2"
-bottom: "low2_2_loop3"
+bottom: "inp_loop3_low3_2"
 }
 #relu1_loop3_low3_2
 layer {
@@ -7442,7 +8243,7 @@ mirror : 0
 }
 top : "low3_2_loop3"
 bottom : "Convolution3_loop3_low3_2"
-bottom : "low2_2_loop3"
+bottom : "inp_loop3_low3_2"
 }
 #up2_2_loop3
 layer {
@@ -7473,7 +8274,21 @@ mirror : 0
 }
 }
 #low3_3_loop3
+#inp_low3_3_loop3
+layer {
+name : "inp_loop3_low3_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop3_low3_3"
+bottom: "low2_3_loop3"
+}
 #batchnorm1_loop3_low3_3
 layer {
 name : "BN1_loop3_low3_3"
@@ -7483,7 +8298,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop3_low3_3"
-bottom: "low2_3_loop3"
+bottom: "inp_loop3_low3_3"
 }
 #relu1_loop3_low3_3
 layer {
@@ -7636,7 +8451,7 @@ mirror : 0
 }
 top : "low3_3_loop3"
 bottom : "Convolution3_loop3_low3_3"
-bottom : "low2_3_loop3"
+bottom : "inp_loop3_low3_3"
 }
 #up2_3_loop3
 layer {
@@ -7667,7 +8482,21 @@ mirror : 0
 }
 }
 #low3_4_loop3
+#inp_low3_4_loop3
+layer {
+name : "inp_loop3_low3_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop3_low3_4"
+bottom: "low2_4_loop3"
+}
 #batchnorm1_loop3_low3_4
 layer {
 name : "BN1_loop3_low3_4"
@@ -7677,7 +8506,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop3_low3_4"
-bottom: "low2_4_loop3"
+bottom: "inp_loop3_low3_4"
 }
 #relu1_loop3_low3_4
 layer {
@@ -7830,7 +8659,7 @@ mirror : 0
 }
 top : "low3_4_loop3"
 bottom : "Convolution3_loop3_low3_4"
-bottom : "low2_4_loop3"
+bottom : "inp_loop3_low3_4"
 }
 #up2_4_loop3
 layer {
@@ -7860,7 +8689,186 @@ mirror : 0
 
 }
 }
+#residual_loop3
+#inp_residual_loop3
+layer {
+name : "inp_residual_loop3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_residual_loop3"
+bottom: "hg_loop3"
+}
+#batchnorm1_residual_loop3
+layer {
+name : "BN1_residual_loop3"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN1_residual_loop3"
+bottom: "inp_residual_loop3"
+}
+#relu1_residual_loop3
+layer {
+name : "ReLU1_residual_loop3"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU1_residual_loop3"
+bottom : "BN1_residual_loop3"
+}
+#conv1_residual_loop3
+layer {
+name : "Convolution1_residual_loop3"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution1_residual_loop3"
+bottom : "ReLU1_residual_loop3"
+}
+#batchnorm2_residual_loop3
+layer {
+name : "BN2_residual_loop3"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN2_residual_loop3"
+bottom : "Convolution1_residual_loop3"
+}
+#relu2_residual_loop3
+layer {
+name : "ReLU2_residual_loop3"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU2_residual_loop3"
+bottom : "BN2_residual_loop3"
+}
+#conv2_residual_loop3
+layer {
+name : "Convolution2_residual_loop3"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 3
+stride: 1
+pad: 1
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution2_residual_loop3"
+bottom : "ReLU2_residual_loop3"
+}
+#batchnorm3_residual_loop3
+layer {
+name : "BN3_residual_loop3"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN3_residual_loop3"
+bottom : "Convolution2_residual_loop3"
+}
+#relu3_residual_loop3
+layer {
+name : "ReLU3_residual_loop3"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU3_residual_loop3"
+bottom : "BN3_residual_loop3"
+}
+#conv3_residual_loop3
+layer {
+name : "Convolution3_residual_loop3"
+type : "Convolution"
+convolution_param {
+num_output: 256
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution3_residual_loop3"
+bottom : "ReLU3_residual_loop3"
+}
+#out_residual_loop3
+layer {
+name : "out_residual_loop3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
+
+}
+top : "residual_loop3"
+bottom : "Convolution3_residual_loop3"
+bottom : "inp_residual_loop3"
+}
 #lin_loop3
 #conv1_lin_loop3
 layer {
@@ -7888,7 +8896,7 @@ decay_mult : 0
 }
 
 top : "Convolution_lin_loop3"
-bottom : "hg_loop3"
+bottom : "residual_loop3"
 }
 #batchnorm_lin_loop3
 layer {
@@ -8014,9 +9022,37 @@ bottom : "tmpout_loop3_"
 bottom : "ll_loop3_"
 }
 #hg_loop4
+#inp_loop4
+layer {
+name : "inp_loop4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop4"
+bottom: "inter_loop4"
+}
 #up1_1_loop4
+#inp_loop4_up1_1
+layer {
+name : "inp_loop4_up1_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop4_up1_1"
+bottom: "inp_loop4"
+}
 #batchnorm1_loop4_up1_1
 layer {
 name : "BN1_loop4_up1_1"
@@ -8026,7 +9062,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop4_up1_1"
-bottom: "inter_loop4"
+bottom: "inp_loop4_up1_1"
 }
 #relu1_loop4_up1_1
 layer {
@@ -8179,7 +9215,7 @@ mirror : 0
 }
 top : "up1_1_loop4"
 bottom : "Convolution3_loop4_up1_1"
-bottom : "inter_loop4"
+bottom : "inp_loop4_up1_1"
 }
 #low1_pooling_1_loop4
 layer {
@@ -8359,7 +9395,21 @@ bottom : "Convolution3_loop4_low1_1"
 bottom : "low1_pooling_1_loop4"
 }
 #up1_2_loop4
+#inp_loop4_up1_2
+layer {
+name : "inp_loop4_up1_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop4_up1_2"
+bottom: "low1_1_loop4"
+}
 #batchnorm1_loop4_up1_2
 layer {
 name : "BN1_loop4_up1_2"
@@ -8369,7 +9419,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop4_up1_2"
-bottom: "low1_1_loop4"
+bottom: "inp_loop4_up1_2"
 }
 #relu1_loop4_up1_2
 layer {
@@ -8522,7 +9572,7 @@ mirror : 0
 }
 top : "up1_2_loop4"
 bottom : "Convolution3_loop4_up1_2"
-bottom : "low1_1_loop4"
+bottom : "inp_loop4_up1_2"
 }
 #low1_pooling_2_loop4
 layer {
@@ -8702,7 +9752,21 @@ bottom : "Convolution3_loop4_low1_2"
 bottom : "low1_pooling_2_loop4"
 }
 #up1_3_loop4
+#inp_loop4_up1_3
+layer {
+name : "inp_loop4_up1_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop4_up1_3"
+bottom: "low1_2_loop4"
+}
 #batchnorm1_loop4_up1_3
 layer {
 name : "BN1_loop4_up1_3"
@@ -8712,7 +9776,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop4_up1_3"
-bottom: "low1_2_loop4"
+bottom: "inp_loop4_up1_3"
 }
 #relu1_loop4_up1_3
 layer {
@@ -8865,7 +9929,7 @@ mirror : 0
 }
 top : "up1_3_loop4"
 bottom : "Convolution3_loop4_up1_3"
-bottom : "low1_2_loop4"
+bottom : "inp_loop4_up1_3"
 }
 #low1_pooling_3_loop4
 layer {
@@ -9045,7 +10109,21 @@ bottom : "Convolution3_loop4_low1_3"
 bottom : "low1_pooling_3_loop4"
 }
 #up1_4_loop4
+#inp_loop4_up1_4
+layer {
+name : "inp_loop4_up1_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop4_up1_4"
+bottom: "low1_3_loop4"
+}
 #batchnorm1_loop4_up1_4
 layer {
 name : "BN1_loop4_up1_4"
@@ -9055,7 +10133,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop4_up1_4"
-bottom: "low1_3_loop4"
+bottom: "inp_loop4_up1_4"
 }
 #relu1_loop4_up1_4
 layer {
@@ -9208,7 +10286,7 @@ mirror : 0
 }
 top : "up1_4_loop4"
 bottom : "Convolution3_loop4_up1_4"
-bottom : "low1_3_loop4"
+bottom : "inp_loop4_up1_4"
 }
 #low1_pooling_4_loop4
 layer {
@@ -9388,7 +10466,21 @@ bottom : "Convolution3_loop4_low1_4"
 bottom : "low1_pooling_4_loop4"
 }
 #low2_1_loop4
+#inp_loop4_low2_1
+layer {
+name : "inp_loop4_low2_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop4_low2_1"
+bottom: "low1_4_loop4"
+}
 #batchnorm1_loop4_low2_1
 layer {
 name : "BN1_loop4_low2_1"
@@ -9398,7 +10490,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop4_low2_1"
-bottom: "low1_4_loop4"
+bottom: "inp_loop4_low2_1"
 }
 #relu1_loop4_low2_1
 layer {
@@ -9551,10 +10643,24 @@ mirror : 0
 }
 top : "low2_1_loop4"
 bottom : "Convolution3_loop4_low2_1"
-bottom : "low1_4_loop4"
+bottom : "inp_loop4_low2_1"
 }
 #low3_1_loop4
+#inp_low3_1_loop4
+layer {
+name : "inp_loop4_low3_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop4_low3_1"
+bottom: "low2_1_loop4"
+}
 #batchnorm1_loop4_low3_1
 layer {
 name : "BN1_loop4_low3_1"
@@ -9564,7 +10670,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop4_low3_1"
-bottom: "low2_1_loop4"
+bottom: "inp_loop4_low3_1"
 }
 #relu1_loop4_low3_1
 layer {
@@ -9717,7 +10823,7 @@ mirror : 0
 }
 top : "low3_1_loop4"
 bottom : "Convolution3_loop4_low3_1"
-bottom : "low2_1_loop4"
+bottom : "inp_loop4_low3_1"
 }
 #up2_1_loop4
 layer {
@@ -9750,7 +10856,21 @@ mirror : 0
 }
 }
 #low3_2_loop4
+#inp_low3_2_loop4
+layer {
+name : "inp_loop4_low3_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop4_low3_2"
+bottom: "low2_2_loop4"
+}
 #batchnorm1_loop4_low3_2
 layer {
 name : "BN1_loop4_low3_2"
@@ -9760,7 +10880,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop4_low3_2"
-bottom: "low2_2_loop4"
+bottom: "inp_loop4_low3_2"
 }
 #relu1_loop4_low3_2
 layer {
@@ -9913,7 +11033,7 @@ mirror : 0
 }
 top : "low3_2_loop4"
 bottom : "Convolution3_loop4_low3_2"
-bottom : "low2_2_loop4"
+bottom : "inp_loop4_low3_2"
 }
 #up2_2_loop4
 layer {
@@ -9944,7 +11064,21 @@ mirror : 0
 }
 }
 #low3_3_loop4
+#inp_low3_3_loop4
+layer {
+name : "inp_loop4_low3_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop4_low3_3"
+bottom: "low2_3_loop4"
+}
 #batchnorm1_loop4_low3_3
 layer {
 name : "BN1_loop4_low3_3"
@@ -9954,7 +11088,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop4_low3_3"
-bottom: "low2_3_loop4"
+bottom: "inp_loop4_low3_3"
 }
 #relu1_loop4_low3_3
 layer {
@@ -10107,7 +11241,7 @@ mirror : 0
 }
 top : "low3_3_loop4"
 bottom : "Convolution3_loop4_low3_3"
-bottom : "low2_3_loop4"
+bottom : "inp_loop4_low3_3"
 }
 #up2_3_loop4
 layer {
@@ -10138,7 +11272,21 @@ mirror : 0
 }
 }
 #low3_4_loop4
+#inp_low3_4_loop4
+layer {
+name : "inp_loop4_low3_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop4_low3_4"
+bottom: "low2_4_loop4"
+}
 #batchnorm1_loop4_low3_4
 layer {
 name : "BN1_loop4_low3_4"
@@ -10148,7 +11296,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop4_low3_4"
-bottom: "low2_4_loop4"
+bottom: "inp_loop4_low3_4"
 }
 #relu1_loop4_low3_4
 layer {
@@ -10301,7 +11449,7 @@ mirror : 0
 }
 top : "low3_4_loop4"
 bottom : "Convolution3_loop4_low3_4"
-bottom : "low2_4_loop4"
+bottom : "inp_loop4_low3_4"
 }
 #up2_4_loop4
 layer {
@@ -10331,7 +11479,186 @@ mirror : 0
 
 }
 }
+#residual_loop4
+#inp_residual_loop4
+layer {
+name : "inp_residual_loop4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_residual_loop4"
+bottom: "hg_loop4"
+}
+#batchnorm1_residual_loop4
+layer {
+name : "BN1_residual_loop4"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN1_residual_loop4"
+bottom: "inp_residual_loop4"
+}
+#relu1_residual_loop4
+layer {
+name : "ReLU1_residual_loop4"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU1_residual_loop4"
+bottom : "BN1_residual_loop4"
+}
+#conv1_residual_loop4
+layer {
+name : "Convolution1_residual_loop4"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution1_residual_loop4"
+bottom : "ReLU1_residual_loop4"
+}
+#batchnorm2_residual_loop4
+layer {
+name : "BN2_residual_loop4"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN2_residual_loop4"
+bottom : "Convolution1_residual_loop4"
+}
+#relu2_residual_loop4
+layer {
+name : "ReLU2_residual_loop4"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU2_residual_loop4"
+bottom : "BN2_residual_loop4"
+}
+#conv2_residual_loop4
+layer {
+name : "Convolution2_residual_loop4"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 3
+stride: 1
+pad: 1
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution2_residual_loop4"
+bottom : "ReLU2_residual_loop4"
+}
+#batchnorm3_residual_loop4
+layer {
+name : "BN3_residual_loop4"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN3_residual_loop4"
+bottom : "Convolution2_residual_loop4"
+}
+#relu3_residual_loop4
+layer {
+name : "ReLU3_residual_loop4"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU3_residual_loop4"
+bottom : "BN3_residual_loop4"
+}
+#conv3_residual_loop4
+layer {
+name : "Convolution3_residual_loop4"
+type : "Convolution"
+convolution_param {
+num_output: 256
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution3_residual_loop4"
+bottom : "ReLU3_residual_loop4"
+}
+#out_residual_loop4
+layer {
+name : "out_residual_loop4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
+
+}
+top : "residual_loop4"
+bottom : "Convolution3_residual_loop4"
+bottom : "inp_residual_loop4"
+}
 #lin_loop4
 #conv1_lin_loop4
 layer {
@@ -10359,7 +11686,7 @@ decay_mult : 0
 }
 
 top : "Convolution_lin_loop4"
-bottom : "hg_loop4"
+bottom : "residual_loop4"
 }
 #batchnorm_lin_loop4
 layer {
@@ -10485,9 +11812,37 @@ bottom : "tmpout_loop4_"
 bottom : "ll_loop4_"
 }
 #hg_loop5
+#inp_loop5
+layer {
+name : "inp_loop5"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop5"
+bottom: "inter_loop5"
+}
 #up1_1_loop5
+#inp_loop5_up1_1
+layer {
+name : "inp_loop5_up1_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop5_up1_1"
+bottom: "inp_loop5"
+}
 #batchnorm1_loop5_up1_1
 layer {
 name : "BN1_loop5_up1_1"
@@ -10497,7 +11852,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop5_up1_1"
-bottom: "inter_loop5"
+bottom: "inp_loop5_up1_1"
 }
 #relu1_loop5_up1_1
 layer {
@@ -10650,7 +12005,7 @@ mirror : 0
 }
 top : "up1_1_loop5"
 bottom : "Convolution3_loop5_up1_1"
-bottom : "inter_loop5"
+bottom : "inp_loop5_up1_1"
 }
 #low1_pooling_1_loop5
 layer {
@@ -10830,7 +12185,21 @@ bottom : "Convolution3_loop5_low1_1"
 bottom : "low1_pooling_1_loop5"
 }
 #up1_2_loop5
+#inp_loop5_up1_2
+layer {
+name : "inp_loop5_up1_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop5_up1_2"
+bottom: "low1_1_loop5"
+}
 #batchnorm1_loop5_up1_2
 layer {
 name : "BN1_loop5_up1_2"
@@ -10840,7 +12209,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop5_up1_2"
-bottom: "low1_1_loop5"
+bottom: "inp_loop5_up1_2"
 }
 #relu1_loop5_up1_2
 layer {
@@ -10993,7 +12362,7 @@ mirror : 0
 }
 top : "up1_2_loop5"
 bottom : "Convolution3_loop5_up1_2"
-bottom : "low1_1_loop5"
+bottom : "inp_loop5_up1_2"
 }
 #low1_pooling_2_loop5
 layer {
@@ -11173,7 +12542,21 @@ bottom : "Convolution3_loop5_low1_2"
 bottom : "low1_pooling_2_loop5"
 }
 #up1_3_loop5
+#inp_loop5_up1_3
+layer {
+name : "inp_loop5_up1_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop5_up1_3"
+bottom: "low1_2_loop5"
+}
 #batchnorm1_loop5_up1_3
 layer {
 name : "BN1_loop5_up1_3"
@@ -11183,7 +12566,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop5_up1_3"
-bottom: "low1_2_loop5"
+bottom: "inp_loop5_up1_3"
 }
 #relu1_loop5_up1_3
 layer {
@@ -11336,7 +12719,7 @@ mirror : 0
 }
 top : "up1_3_loop5"
 bottom : "Convolution3_loop5_up1_3"
-bottom : "low1_2_loop4"
+bottom : "inp_loop5_up1_3"
 }
 #low1_pooling_3_loop5
 layer {
@@ -11516,6 +12899,21 @@ bottom : "Convolution3_loop5_low1_3"
 bottom : "low1_pooling_3_loop5"
 }
 #up1_4_loop5
+#inp_loop5_up1_4
+layer {
+name : "inp_loop5_up1_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
+
+}
+top : "inp_loop5_up1_4"
+bottom: "low1_3_loop5"
+}
 #batchnorm1_loop5_up1_4
 layer {
 name : "BN1_loop5_up1_4"
@@ -11525,7 +12923,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop5_up1_4"
-bottom: "low1_3_loop5"
+bottom: "inp_loop5_up1_4"
 }
 #relu1_loop5_up1_4
 layer {
@@ -11678,7 +13076,7 @@ mirror : 0
 }
 top : "up1_4_loop5"
 bottom : "Convolution3_loop5_up1_4"
-bottom : "low1_3_loop5"
+bottom : "inp_loop5_up1_4"
 }
 #low1_pooling_4_loop5
 layer {
@@ -11858,7 +13256,21 @@ bottom : "Convolution3_loop5_low1_4"
 bottom : "low1_pooling_4_loop5"
 }
 #low2_1_loop5
+#inp_loop5_low2_1
+layer {
+name : "inp_loop5_low2_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop5_low2_1"
+bottom: "low1_4_loop5"
+}
 #batchnorm1_loop5_low2_1
 layer {
 name : "BN1_loop5_low2_1"
@@ -11868,7 +13280,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop5_low2_1"
-bottom: "low1_4_loop5"
+bottom: "inp_loop5_low2_1"
 }
 #relu1_loop5_low2_1
 layer {
@@ -12021,10 +13433,24 @@ mirror : 0
 }
 top : "low2_1_loop5"
 bottom : "Convolution3_loop5_low2_1"
-bottom : "low1_4_loop5"
+bottom : "inp_loop5_low2_1"
 }
 #low3_1_loop5
+#inp_low3_1_loop5
+layer {
+name : "inp_loop5_low3_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop5_low3_1"
+bottom: "low2_1_loop5"
+}
 #batchnorm1_loop5_low3_1
 layer {
 name : "BN1_loop5_low3_1"
@@ -12034,7 +13460,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop5_low3_1"
-bottom: "low2_1_loop5"
+bottom: "inp_loop5_low3_1"
 }
 #relu1_loop5_low3_1
 layer {
@@ -12187,7 +13613,7 @@ mirror : 0
 }
 top : "low3_1_loop5"
 bottom : "Convolution3_loop5_low3_1"
-bottom : "low2_1_loop5"
+bottom : "inp_loop5_low3_1"
 }
 #up2_1_loop5
 layer {
@@ -12220,7 +13646,21 @@ mirror : 0
 }
 }
 #low3_2_loop5
+#inp_low3_2_loop5
+layer {
+name : "inp_loop5_low3_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop5_low3_2"
+bottom: "low2_2_loop5"
+}
 #batchnorm1_loop5_low3_2
 layer {
 name : "BN1_loop5_low3_2"
@@ -12230,7 +13670,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop5_low3_2"
-bottom: "low2_2_loop5"
+bottom: "inp_loop5_low3_2"
 }
 #relu1_loop5_low3_2
 layer {
@@ -12383,7 +13823,7 @@ mirror : 0
 }
 top : "low3_2_loop5"
 bottom : "Convolution3_loop5_low3_2"
-bottom : "low2_2_loop5"
+bottom : "inp_loop5_low3_2"
 }
 #up2_2_loop5
 layer {
@@ -12414,7 +13854,21 @@ mirror : 0
 }
 }
 #low3_3_loop5
+#inp_low3_3_loop5
+layer {
+name : "inp_loop5_low3_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop5_low3_3"
+bottom: "low2_3_loop5"
+}
 #batchnorm1_loop5_low3_3
 layer {
 name : "BN1_loop5_low3_3"
@@ -12424,7 +13878,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop5_low3_3"
-bottom: "low2_3_loop5"
+bottom: "inp_loop5_low3_3"
 }
 #relu1_loop5_low3_3
 layer {
@@ -12577,7 +14031,7 @@ mirror : 0
 }
 top : "low3_3_loop5"
 bottom : "Convolution3_loop5_low3_3"
-bottom : "low2_3_loop5"
+bottom : "inp_loop5_low3_3"
 }
 #up2_3_loop5
 layer {
@@ -12608,7 +14062,21 @@ mirror : 0
 }
 }
 #low3_4_loop5
+#inp_low3_4_loop5
+layer {
+name : "inp_loop5_low3_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop5_low3_4"
+bottom: "low2_4_loop5"
+}
 #batchnorm1_loop5_low3_4
 layer {
 name : "BN1_loop5_low3_4"
@@ -12618,7 +14086,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop5_low3_4"
-bottom: "low2_4_loop5"
+bottom: "inp_loop5_low3_4"
 }
 #relu1_loop5_low3_4
 layer {
@@ -12771,7 +14239,7 @@ mirror : 0
 }
 top : "low3_4_loop5"
 bottom : "Convolution3_loop5_low3_4"
-bottom : "low2_4_loop5"
+bottom : "inp_loop5_low3_4"
 }
 #up2_4_loop5
 layer {
@@ -12801,7 +14269,186 @@ mirror : 0
 
 }
 }
+#residual_loop5
+#inp_residual_loop5
+layer {
+name : "inp_residual_loop5"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_residual_loop5"
+bottom: "hg_loop5"
+}
+#batchnorm1_residual_loop5
+layer {
+name : "BN1_residual_loop5"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN1_residual_loop5"
+bottom: "inp_residual_loop5"
+}
+#relu1_residual_loop5
+layer {
+name : "ReLU1_residual_loop5"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU1_residual_loop5"
+bottom : "BN1_residual_loop5"
+}
+#conv1_residual_loop5
+layer {
+name : "Convolution1_residual_loop5"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution1_residual_loop5"
+bottom : "ReLU1_residual_loop5"
+}
+#batchnorm2_residual_loop5
+layer {
+name : "BN2_residual_loop5"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN2_residual_loop5"
+bottom : "Convolution1_residual_loop5"
+}
+#relu2_residual_loop5
+layer {
+name : "ReLU2_residual_loop5"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU2_residual_loop5"
+bottom : "BN2_residual_loop5"
+}
+#conv2_residual_loop5
+layer {
+name : "Convolution2_residual_loop5"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 3
+stride: 1
+pad: 1
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution2_residual_loop5"
+bottom : "ReLU2_residual_loop5"
+}
+#batchnorm3_residual_loop5
+layer {
+name : "BN3_residual_loop5"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN3_residual_loop5"
+bottom : "Convolution2_residual_loop5"
+}
+#relu3_residual_loop5
+layer {
+name : "ReLU3_residual_loop5"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU3_residual_loop5"
+bottom : "BN3_residual_loop5"
+}
+#conv3_residual_loop5
+layer {
+name : "Convolution3_residual_loop5"
+type : "Convolution"
+convolution_param {
+num_output: 256
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution3_residual_loop5"
+bottom : "ReLU3_residual_loop5"
+}
+#out_residual_loop5
+layer {
+name : "out_residual_loop5"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
+
+}
+top : "residual_loop5"
+bottom : "Convolution3_residual_loop5"
+bottom : "inp_residual_loop5"
+}
 #lin_loop5
 #conv1_lin_loop5
 layer {
@@ -12829,7 +14476,7 @@ decay_mult : 0
 }
 
 top : "Convolution_lin_loop5"
-bottom : "hg_loop5"
+bottom : "residual_loop5"
 }
 #batchnorm_lin_loop5
 layer {
@@ -12955,9 +14602,37 @@ bottom : "tmpout_loop5_"
 bottom : "ll_loop5_"
 }
 #hg_loop6
+#inp_loop6
+layer {
+name : "inp_loop6"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop6"
+bottom: "inter_loop6"
+}
 #up1_1_loop6
+#inp_loop6_up1_1
+layer {
+name : "inp_loop6_up1_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop6_up1_1"
+bottom: "inp_loop6"
+}
 #batchnorm1_loop6_up1_1
 layer {
 name : "BN1_loop6_up1_1"
@@ -12967,7 +14642,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop6_up1_1"
-bottom: "inter_loop6"
+bottom: "inp_loop6_up1_1"
 }
 #relu1_loop6_up1_1
 layer {
@@ -13120,7 +14795,7 @@ mirror : 0
 }
 top : "up1_1_loop6"
 bottom : "Convolution3_loop6_up1_1"
-bottom : "inter_loop6"
+bottom : "inp_loop6_up1_1"
 }
 #low1_pooling_1_loop6
 layer {
@@ -13300,7 +14975,21 @@ bottom : "Convolution3_loop6_low1_1"
 bottom : "low1_pooling_1_loop6"
 }
 #up1_2_loop6
+#inp_loop6_up1_2
+layer {
+name : "inp_loop6_up1_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop6_up1_2"
+bottom: "low1_1_loop6"
+}
 #batchnorm1_loop6_up1_2
 layer {
 name : "BN1_loop6_up1_2"
@@ -13310,7 +14999,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop6_up1_2"
-bottom: "low1_1_loop6"
+bottom: "inp_loop6_up1_2"
 }
 #relu1_loop6_up1_2
 layer {
@@ -13463,7 +15152,7 @@ mirror : 0
 }
 top : "up1_2_loop6"
 bottom : "Convolution3_loop6_up1_2"
-bottom : "low1_1_loop6"
+bottom : "inp_loop6_up1_2"
 }
 #low1_pooling_2_loop6
 layer {
@@ -13643,7 +15332,21 @@ bottom : "Convolution3_loop6_low1_2"
 bottom : "low1_pooling_2_loop6"
 }
 #up1_3_loop6
+#inp_loop6_up1_3
+layer {
+name : "inp_loop6_up1_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop6_up1_3"
+bottom: "low1_2_loop6"
+}
 #batchnorm1_loop6_up1_3
 layer {
 name : "BN1_loop6_up1_3"
@@ -13653,7 +15356,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop6_up1_3"
-bottom: "low1_2_loop6"
+bottom: "inp_loop6_up1_3"
 }
 #relu1_loop6_up1_3
 layer {
@@ -13806,7 +15509,7 @@ mirror : 0
 }
 top : "up1_3_loop6"
 bottom : "Convolution3_loop6_up1_3"
-bottom : "low1_2_loop6"
+bottom : "inp_loop6_up1_3"
 }
 #low1_pooling_3_loop6
 layer {
@@ -13986,7 +15689,21 @@ bottom : "Convolution3_loop6_low1_3"
 bottom : "low1_pooling_3_loop6"
 }
 #up1_4_loop6
+#inp_loop6_up1_4
+layer {
+name : "inp_loop6_up1_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop6_up1_4"
+bottom: "low1_3_loop6"
+}
 #batchnorm1_loop6_up1_4
 layer {
 name : "BN1_loop6_up1_4"
@@ -13996,7 +15713,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop6_up1_4"
-bottom: "low1_3_loop6"
+bottom: "inp_loop6_up1_4"
 }
 #relu1_loop6_up1_4
 layer {
@@ -14149,7 +15866,7 @@ mirror : 0
 }
 top : "up1_4_loop6"
 bottom : "Convolution3_loop6_up1_4"
-bottom : "low1_3_loop6"
+bottom : "inp_loop6_up1_4"
 }
 #low1_pooling_4_loop6
 layer {
@@ -14329,7 +16046,21 @@ bottom : "Convolution3_loop6_low1_4"
 bottom : "low1_pooling_4_loop6"
 }
 #low2_1_loop6
+#inp_loop6_low2_1
+layer {
+name : "inp_loop6_low2_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop6_low2_1"
+bottom: "low1_4_loop6"
+}
 #batchnorm1_loop6_low2_1
 layer {
 name : "BN1_loop6_low2_1"
@@ -14339,7 +16070,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop6_low2_1"
-bottom: "low1_4_loop6"
+bottom: "inp_loop6_low2_1"
 }
 #relu1_loop6_low2_1
 layer {
@@ -14492,10 +16223,24 @@ mirror : 0
 }
 top : "low2_1_loop6"
 bottom : "Convolution3_loop6_low2_1"
-bottom : "low1_4_loop6"
+bottom : "inp_loop6_low2_1"
 }
 #low3_1_loop6
+#inp_low3_1_loop6
+layer {
+name : "inp_loop6_low3_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop6_low3_1"
+bottom: "low2_1_loop6"
+}
 #batchnorm1_loop6_low3_1
 layer {
 name : "BN1_loop6_low3_1"
@@ -14505,7 +16250,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop6_low3_1"
-bottom: "low2_1_loop6"
+bottom: "inp_loop6_low3_1"
 }
 #relu1_loop6_low3_1
 layer {
@@ -14658,7 +16403,7 @@ mirror : 0
 }
 top : "low3_1_loop6"
 bottom : "Convolution3_loop6_low3_1"
-bottom : "low2_1_loop6"
+bottom : "inp_loop6_low3_1"
 }
 #up2_1_loop6
 layer {
@@ -14691,7 +16436,21 @@ mirror : 0
 }
 }
 #low3_2_loop6
+#inp_low3_2_loop6
+layer {
+name : "inp_loop6_low3_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop6_low3_2"
+bottom: "low2_2_loop6"
+}
 #batchnorm1_loop6_low3_2
 layer {
 name : "BN1_loop6_low3_2"
@@ -14701,7 +16460,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop6_low3_2"
-bottom: "low2_2_loop6"
+bottom: "inp_loop6_low3_2"
 }
 #relu1_loop6_low3_2
 layer {
@@ -14854,7 +16613,7 @@ mirror : 0
 }
 top : "low3_2_loop6"
 bottom : "Convolution3_loop6_low3_2"
-bottom : "low2_2_loop6"
+bottom : "inp_loop6_low3_2"
 }
 #up2_2_loop6
 layer {
@@ -14885,7 +16644,21 @@ mirror : 0
 }
 }
 #low3_3_loop6
+#inp_low3_3_loop6
+layer {
+name : "inp_loop6_low3_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop6_low3_3"
+bottom: "low2_3_loop6"
+}
 #batchnorm1_loop6_low3_3
 layer {
 name : "BN1_loop6_low3_3"
@@ -14895,7 +16668,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop6_low3_3"
-bottom: "low2_3_loop6"
+bottom: "inp_loop6_low3_3"
 }
 #relu1_loop6_low3_3
 layer {
@@ -15048,7 +16821,7 @@ mirror : 0
 }
 top : "low3_3_loop6"
 bottom : "Convolution3_loop6_low3_3"
-bottom : "low2_3_loop6"
+bottom : "inp_loop6_low3_3"
 }
 #up2_3_loop6
 layer {
@@ -15079,7 +16852,21 @@ mirror : 0
 }
 }
 #low3_4_loop6
+#inp_low3_4_loop6
+layer {
+name : "inp_loop6_low3_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop6_low3_4"
+bottom: "low2_4_loop6"
+}
 #batchnorm1_loop6_low3_4
 layer {
 name : "BN1_loop6_low3_4"
@@ -15089,7 +16876,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop6_low3_4"
-bottom: "low2_4_loop6"
+bottom: "inp_loop6_low3_4"
 }
 #relu1_loop6_low3_4
 layer {
@@ -15242,7 +17029,7 @@ mirror : 0
 }
 top : "low3_4_loop6"
 bottom : "Convolution3_loop6_low3_4"
-bottom : "low2_4_loop6"
+bottom : "inp_loop6_low3_4"
 }
 #up2_4_loop6
 layer {
@@ -15272,7 +17059,186 @@ mirror : 0
 
 }
 }
+#residual_loop6
+#inp_residual_loop6
+layer {
+name : "inp_residual_loop6"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_residual_loop6"
+bottom: "hg_loop6"
+}
+#batchnorm1_residual_loop6
+layer {
+name : "BN1_residual_loop6"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN1_residual_loop6"
+bottom: "inp_residual_loop6"
+}
+#relu1_residual_loop6
+layer {
+name : "ReLU1_residual_loop6"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU1_residual_loop6"
+bottom : "BN1_residual_loop6"
+}
+#conv1_residual_loop6
+layer {
+name : "Convolution1_residual_loop6"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution1_residual_loop6"
+bottom : "ReLU1_residual_loop6"
+}
+#batchnorm2_residual_loop6
+layer {
+name : "BN2_residual_loop6"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN2_residual_loop6"
+bottom : "Convolution1_residual_loop6"
+}
+#relu2_residual_loop6
+layer {
+name : "ReLU2_residual_loop6"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU2_residual_loop6"
+bottom : "BN2_residual_loop6"
+}
+#conv2_residual_loop6
+layer {
+name : "Convolution2_residual_loop6"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 3
+stride: 1
+pad: 1
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution2_residual_loop6"
+bottom : "ReLU2_residual_loop6"
+}
+#batchnorm3_residual_loop6
+layer {
+name : "BN3_residual_loop6"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN3_residual_loop6"
+bottom : "Convolution2_residual_loop6"
+}
+#relu3_residual_loop6
+layer {
+name : "ReLU3_residual_loop6"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU3_residual_loop6"
+bottom : "BN3_residual_loop6"
+}
+#conv3_residual_loop6
+layer {
+name : "Convolution3_residual_loop6"
+type : "Convolution"
+convolution_param {
+num_output: 256
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution3_residual_loop6"
+bottom : "ReLU3_residual_loop6"
+}
+#out_residual_loop6
+layer {
+name : "out_residual_loop6"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
+
+}
+top : "residual_loop6"
+bottom : "Convolution3_residual_loop6"
+bottom : "inp_residual_loop6"
+}
 #lin_loop6
 #conv1_lin_loop6
 layer {
@@ -15300,7 +17266,7 @@ decay_mult : 0
 }
 
 top : "Convolution_lin_loop6"
-bottom : "hg_loop6"
+bottom : "residual_loop6"
 }
 #batchnorm_lin_loop6
 layer {
@@ -15426,9 +17392,37 @@ bottom : "tmpout_loop6_"
 bottom : "ll_loop6_"
 }
 #hg_loop7
+#inp_loop7
+layer {
+name : "inp_loop7"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop7"
+bottom: "inter_loop7"
+}
 #up1_1_loop7
+#inp_loop7_up1_1
+layer {
+name : "inp_loop7_up1_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop7_up1_1"
+bottom: "inp_loop7"
+}
 #batchnorm1_loop7_up1_1
 layer {
 name : "BN1_loop7_up1_1"
@@ -15438,7 +17432,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop7_up1_1"
-bottom: "inter_loop7"
+bottom: "inp_loop7_up1_1"
 }
 #relu1_loop7_up1_1
 layer {
@@ -15591,7 +17585,7 @@ mirror : 0
 }
 top : "up1_1_loop7"
 bottom : "Convolution3_loop7_up1_1"
-bottom : "inter_loop7"
+bottom : "inp_loop7_up1_1"
 }
 #low1_pooling_1_loop7
 layer {
@@ -15771,7 +17765,21 @@ bottom : "Convolution3_loop7_low1_1"
 bottom : "low1_pooling_1_loop7"
 }
 #up1_2_loop7
+#inp_loop7_up1_2
+layer {
+name : "inp_loop7_up1_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop7_up1_2"
+bottom: "low1_1_loop7"
+}
 #batchnorm1_loop7_up1_2
 layer {
 name : "BN1_loop7_up1_2"
@@ -15781,7 +17789,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop7_up1_2"
-bottom: "low1_1_loop7"
+bottom: "inp_loop7_up1_2"
 }
 #relu1_loop7_up1_2
 layer {
@@ -15934,7 +17942,7 @@ mirror : 0
 }
 top : "up1_2_loop7"
 bottom : "Convolution3_loop7_up1_2"
-bottom : "low1_1_loop7"
+bottom : "inp_loop7_up1_2"
 }
 #low1_pooling_2_loop7
 layer {
@@ -16114,7 +18122,21 @@ bottom : "Convolution3_loop7_low1_2"
 bottom : "low1_pooling_2_loop7"
 }
 #up1_3_loop7
+#inp_loop7_up1_3
+layer {
+name : "inp_loop7_up1_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop7_up1_3"
+bottom: "low1_2_loop7"
+}
 #batchnorm1_loop7_up1_3
 layer {
 name : "BN1_loop7_up1_3"
@@ -16124,7 +18146,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop7_up1_3"
-bottom: "low1_2_loop7"
+bottom: "inp_loop7_up1_3"
 }
 #relu1_loop7_up1_3
 layer {
@@ -16277,7 +18299,7 @@ mirror : 0
 }
 top : "up1_3_loop7"
 bottom : "Convolution3_loop7_up1_3"
-bottom : "low1_2_loop7"
+bottom : "inp_loop7_up1_3"
 }
 #low1_pooling_3_loop7
 layer {
@@ -16457,7 +18479,21 @@ bottom : "Convolution3_loop7_low1_3"
 bottom : "low1_pooling_3_loop7"
 }
 #up1_4_loop7
+#inp_loop7_up1_4
+layer {
+name : "inp_loop7_up1_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop7_up1_4"
+bottom: "low1_3_loop7"
+}
 #batchnorm1_loop7_up1_4
 layer {
 name : "BN1_loop7_up1_4"
@@ -16467,7 +18503,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop7_up1_4"
-bottom: "low1_3_loop7"
+bottom: "inp_loop7_up1_4"
 }
 #relu1_loop7_up1_4
 layer {
@@ -16620,7 +18656,7 @@ mirror : 0
 }
 top : "up1_4_loop7"
 bottom : "Convolution3_loop7_up1_4"
-bottom : "low1_3_loop7"
+bottom : "inp_loop7_up1_4"
 }
 #low1_pooling_4_loop7
 layer {
@@ -16800,7 +18836,21 @@ bottom : "Convolution3_loop7_low1_4"
 bottom : "low1_pooling_4_loop7"
 }
 #low2_1_loop7
+#inp_loop7_low2_1
+layer {
+name : "inp_loop7_low2_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop7_low2_1"
+bottom: "low1_4_loop7"
+}
 #batchnorm1_loop7_low2_1
 layer {
 name : "BN1_loop7_low2_1"
@@ -16810,7 +18860,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop7_low2_1"
-bottom: "low1_4_loop7"
+bottom: "inp_loop7_low2_1"
 }
 #relu1_loop7_low2_1
 layer {
@@ -16963,10 +19013,24 @@ mirror : 0
 }
 top : "low2_1_loop7"
 bottom : "Convolution3_loop7_low2_1"
-bottom : "low1_4_loop7"
+bottom : "inp_loop7_low2_1"
 }
 #low3_1_loop7
+#inp_low3_1_loop7
+layer {
+name : "inp_loop7_low3_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop7_low3_1"
+bottom: "low2_1_loop7"
+}
 #batchnorm1_loop7_low3_1
 layer {
 name : "BN1_loop7_low3_1"
@@ -16976,7 +19040,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop7_low3_1"
-bottom: "low2_1_loop7"
+bottom: "inp_loop7_low3_1"
 }
 #relu1_loop7_low3_1
 layer {
@@ -17129,7 +19193,7 @@ mirror : 0
 }
 top : "low3_1_loop7"
 bottom : "Convolution3_loop7_low3_1"
-bottom : "low2_1_loop7"
+bottom : "inp_loop7_low3_1"
 }
 #up2_1_loop7
 layer {
@@ -17162,7 +19226,21 @@ mirror : 0
 }
 }
 #low3_2_loop7
+#inp_low3_2_loop7
+layer {
+name : "inp_loop7_low3_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop7_low3_2"
+bottom: "low2_2_loop7"
+}
 #batchnorm1_loop7_low3_2
 layer {
 name : "BN1_loop7_low3_2"
@@ -17172,7 +19250,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop7_low3_2"
-bottom: "low2_2_loop7"
+bottom: "inp_loop7_low3_2"
 }
 #relu1_loop7_low3_2
 layer {
@@ -17325,7 +19403,7 @@ mirror : 0
 }
 top : "low3_2_loop7"
 bottom : "Convolution3_loop7_low3_2"
-bottom : "low2_2_loop7"
+bottom : "inp_loop7_low3_2"
 }
 #up2_2_loop7
 layer {
@@ -17356,7 +19434,21 @@ mirror : 0
 }
 }
 #low3_3_loop7
+#inp_low3_3_loop7
+layer {
+name : "inp_loop7_low3_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop7_low3_3"
+bottom: "low2_3_loop7"
+}
 #batchnorm1_loop7_low3_3
 layer {
 name : "BN1_loop7_low3_3"
@@ -17366,7 +19458,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop7_low3_3"
-bottom: "low2_3_loop7"
+bottom: "inp_loop7_low3_3"
 }
 #relu1_loop7_low3_3
 layer {
@@ -17519,7 +19611,7 @@ mirror : 0
 }
 top : "low3_3_loop7"
 bottom : "Convolution3_loop7_low3_3"
-bottom : "low2_3_loop7"
+bottom : "inp_loop7_low3_3"
 }
 #up2_3_loop7
 layer {
@@ -17550,7 +19642,21 @@ mirror : 0
 }
 }
 #low3_4_loop7
+#inp_low3_4_loop7
+layer {
+name : "inp_loop7_low3_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop7_low3_4"
+bottom: "low2_4_loop7"
+}
 #batchnorm1_loop7_low3_4
 layer {
 name : "BN1_loop7_low3_4"
@@ -17560,7 +19666,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop7_low3_4"
-bottom: "low2_4_loop7"
+bottom: "inp_loop7_low3_4"
 }
 #relu1_loop7_low3_4
 layer {
@@ -17600,7 +19706,6 @@ decay_mult : 0
 top : "Convolution1_loop7_low3_4"
 bottom : "ReLU1_loop7_low3_4"
 }
-#########
 #batchnorm2_loop7_low3_4
 layer {
 name : "BN2_loop7_low3_4"
@@ -17651,8 +19756,6 @@ decay_mult : 0
 top : "Convolution2_loop7_low3_4"
 bottom : "ReLU2_loop7_low3_4"
 }
-
-######
 #batchnorm3_loop7_low3_4
 layer {
 name : "BN3_loop7_low3_4"
@@ -17716,7 +19819,7 @@ mirror : 0
 }
 top : "low3_4_loop7"
 bottom : "Convolution3_loop7_low3_4"
-bottom : "low2_4_loop7"
+bottom : "inp_loop7_low3_4"
 }
 #up2_4_loop7
 layer {
@@ -17746,7 +19849,186 @@ mirror : 0
 
 }
 }
-#########
+#residual_loop7
+#inp_residual_loop7
+layer {
+name : "inp_residual_loop7"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
+
+}
+top : "inp_residual_loop7"
+bottom: "hg_loop7"
+}
+#batchnorm1_residual_loop7
+layer {
+name : "BN1_residual_loop7"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN1_residual_loop7"
+bottom: "inp_residual_loop7"
+}
+#relu1_residual_loop7
+layer {
+name : "ReLU1_residual_loop7"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU1_residual_loop7"
+bottom : "BN1_residual_loop7"
+}
+#conv1_residual_loop7
+layer {
+name : "Convolution1_residual_loop7"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution1_residual_loop7"
+bottom : "ReLU1_residual_loop7"
+}
+#batchnorm2_residual_loop7
+layer {
+name : "BN2_residual_loop7"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN2_residual_loop7"
+bottom : "Convolution1_residual_loop7"
+}
+#relu2_residual_loop7
+layer {
+name : "ReLU2_residual_loop7"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU2_residual_loop7"
+bottom : "BN2_residual_loop7"
+}
+#conv2_residual_loop7
+layer {
+name : "Convolution2_residual_loop7"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 3
+stride: 1
+pad: 1
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution2_residual_loop7"
+bottom : "ReLU2_residual_loop7"
+}
+#batchnorm3_residual_loop7
+layer {
+name : "BN3_residual_loop7"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN3_residual_loop7"
+bottom : "Convolution2_residual_loop7"
+}
+#relu3_residual_loop7
+layer {
+name : "ReLU3_residual_loop7"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU3_residual_loop7"
+bottom : "BN3_residual_loop7"
+}
+#conv3_residual_loop7
+layer {
+name : "Convolution3_residual_loop7"
+type : "Convolution"
+convolution_param {
+num_output: 256
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution3_residual_loop7"
+bottom : "ReLU3_residual_loop7"
+}
+#out_residual_loop7
+layer {
+name : "out_residual_loop7"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
+
+}
+top : "residual_loop7"
+bottom : "Convolution3_residual_loop7"
+bottom : "inp_residual_loop7"
+}
 #lin_loop7
 #conv1_lin_loop7
 layer {
@@ -17774,7 +20056,7 @@ decay_mult : 0
 }
 
 top : "Convolution_lin_loop7"
-bottom : "hg_loop7"
+bottom : "residual_loop7"
 }
 #batchnorm_lin_loop7
 layer {
@@ -17825,7 +20107,6 @@ decay_mult : 0
 top : "tmpout_loop7"
 bottom : "lin_loop7"
 }
-#####
 #tmpout_loop7_
 layer {
 name : "tmpout_loop7_"
@@ -17901,9 +20182,37 @@ bottom : "tmpout_loop7_"
 bottom : "ll_loop7_"
 }
 #hg_loop8
+#inp_loop8
+layer {
+name : "inp_loop8"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop8"
+bottom: "inter_loop8"
+}
 #up1_1_loop8
+#inp_loop8_up1_1
+layer {
+name : "inp_loop8_up1_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop8_up1_1"
+bottom: "inp_loop8"
+}
 #batchnorm1_loop8_up1_1
 layer {
 name : "BN1_loop8_up1_1"
@@ -17913,7 +20222,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop8_up1_1"
-bottom: "inter_loop8"
+bottom: "inp_loop8_up1_1"
 }
 #relu1_loop8_up1_1
 layer {
@@ -18066,7 +20375,7 @@ mirror : 0
 }
 top : "up1_1_loop8"
 bottom : "Convolution3_loop8_up1_1"
-bottom : "inter_loop8"
+bottom : "inp_loop8_up1_1"
 }
 #low1_pooling_1_loop8
 layer {
@@ -18246,9 +20555,9 @@ bottom : "Convolution3_loop8_low1_1"
 bottom : "low1_pooling_1_loop8"
 }
 #up1_2_loop8
-#inter_loop8_up1_2
+#inp_loop8_up1_2
 layer {
-name : "inter_loop8_up1_2"
+name : "inp_loop8_up1_2"
 type : "Concat"
 data_param {
 backend : LMDB
@@ -18258,7 +20567,7 @@ scale : 1
 mirror : 0
 
 }
-top : "inter_loop8_up1_2"
+top : "inp_loop8_up1_2"
 bottom: "low1_1_loop8"
 }
 #batchnorm1_loop8_up1_2
@@ -18270,7 +20579,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop8_up1_2"
-bottom: "inter_loop8_up1_2"
+bottom: "inp_loop8_up1_2"
 }
 #relu1_loop8_up1_2
 layer {
@@ -18423,7 +20732,7 @@ mirror : 0
 }
 top : "up1_2_loop8"
 bottom : "Convolution3_loop8_up1_2"
-bottom : "inter_loop8_up1_2"
+bottom : "inp_loop8_up1_2"
 }
 #low1_pooling_2_loop8
 layer {
@@ -18603,7 +20912,21 @@ bottom : "Convolution3_loop8_low1_2"
 bottom : "low1_pooling_2_loop8"
 }
 #up1_3_loop8
+#inp_loop8_up1_3
+layer {
+name : "inp_loop8_up1_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop8_up1_3"
+bottom: "low1_2_loop8"
+}
 #batchnorm1_loop8_up1_3
 layer {
 name : "BN1_loop8_up1_3"
@@ -18613,7 +20936,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop8_up1_3"
-bottom: "low1_2_loop8"
+bottom: "inp_loop8_up1_3"
 }
 #relu1_loop8_up1_3
 layer {
@@ -18766,7 +21089,7 @@ mirror : 0
 }
 top : "up1_3_loop8"
 bottom : "Convolution3_loop8_up1_3"
-bottom : "low1_2_loop8"
+bottom : "inp_loop8_up1_3"
 }
 #low1_pooling_3_loop8
 layer {
@@ -18946,7 +21269,21 @@ bottom : "Convolution3_loop8_low1_3"
 bottom : "low1_pooling_3_loop8"
 }
 #up1_4_loop8
+#inp_loop8_up1_4
+layer {
+name : "inp_loop8_up1_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop8_up1_4"
+bottom: "low1_3_loop8"
+}
 #batchnorm1_loop8_up1_4
 layer {
 name : "BN1_loop8_up1_4"
@@ -18956,7 +21293,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop8_up1_4"
-bottom: "low1_3_loop8"
+bottom: "inp_loop8_up1_4"
 }
 #relu1_loop8_up1_4
 layer {
@@ -19109,7 +21446,7 @@ mirror : 0
 }
 top : "up1_4_loop8"
 bottom : "Convolution3_loop8_up1_4"
-bottom : "low1_3_loop8"
+bottom : "inp_loop8_up1_4"
 }
 #low1_pooling_4_loop8
 layer {
@@ -19289,7 +21626,21 @@ bottom : "Convolution3_loop8_low1_4"
 bottom : "low1_pooling_4_loop8"
 }
 #low2_1_loop8
+#inp_loop8_low2_1
+layer {
+name : "inp_loop8_low2_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop8_low2_1"
+bottom: "low1_4_loop8"
+}
 #batchnorm1_loop8_low2_1
 layer {
 name : "BN1_loop8_low2_1"
@@ -19299,7 +21650,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop8_low2_1"
-bottom: "low1_4_loop8"
+bottom: "inp_loop8_low2_1"
 }
 #relu1_loop8_low2_1
 layer {
@@ -19452,10 +21803,24 @@ mirror : 0
 }
 top : "low2_1_loop8"
 bottom : "Convolution3_loop8_low2_1"
-bottom : "low1_4_loop8"
+bottom : "inp_loop8_low2_1"
 }
 #low3_1_loop8
+#inp_low3_1_loop8
+layer {
+name : "inp_loop8_low3_1"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop8_low3_1"
+bottom: "low2_1_loop8"
+}
 #batchnorm1_loop8_low3_1
 layer {
 name : "BN1_loop8_low3_1"
@@ -19465,7 +21830,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop8_low3_1"
-bottom: "low2_1_loop8"
+bottom: "inp_loop8_low3_1"
 }
 #relu1_loop8_low3_1
 layer {
@@ -19618,7 +21983,7 @@ mirror : 0
 }
 top : "low3_1_loop8"
 bottom : "Convolution3_loop8_low3_1"
-bottom : "low2_1_loop8"
+bottom : "inp_loop8_low3_1"
 }
 #up2_1_loop8
 layer {
@@ -19651,7 +22016,21 @@ mirror : 0
 }
 }
 #low3_2_loop8
+#inp_low3_2_loop8
+layer {
+name : "inp_loop8_low3_2"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop8_low3_2"
+bottom: "low2_2_loop8"
+}
 #batchnorm1_loop8_low3_2
 layer {
 name : "BN1_loop8_low3_2"
@@ -19661,7 +22040,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop8_low3_2"
-bottom: "low2_2_loop8"
+bottom: "inp_loop8_low3_2"
 }
 #relu1_loop8_low3_2
 layer {
@@ -19814,7 +22193,7 @@ mirror : 0
 }
 top : "low3_2_loop8"
 bottom : "Convolution3_loop8_low3_2"
-bottom : "low2_2_loop8"
+bottom : "inp_loop8_low3_2"
 }
 #up2_2_loop8
 layer {
@@ -19845,7 +22224,21 @@ mirror : 0
 }
 }
 #low3_3_loop8
+#inp_low3_3_loop8
+layer {
+name : "inp_loop8_low3_3"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop8_low3_3"
+bottom: "low2_3_loop8"
+}
 #batchnorm1_loop8_low3_3
 layer {
 name : "BN1_loop8_low3_3"
@@ -19855,7 +22248,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop8_low3_3"
-bottom: "low2_3_loop8"
+bottom: "inp_loop8_low3_3"
 }
 #relu1_loop8_low3_3
 layer {
@@ -20008,7 +22401,7 @@ mirror : 0
 }
 top : "low3_3_loop8"
 bottom : "Convolution3_loop8_low3_3"
-bottom : "low2_3_loop8"
+bottom : "inp_loop8_low3_3"
 }
 #up2_3_loop8
 layer {
@@ -20039,7 +22432,21 @@ mirror : 0
 }
 }
 #low3_4_loop8
+#inp_low3_4_loop8
+layer {
+name : "inp_loop8_low3_4"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_loop8_low3_4"
+bottom: "low2_4_loop8"
+}
 #batchnorm1_loop8_low3_4
 layer {
 name : "BN1_loop8_low3_4"
@@ -20049,7 +22456,7 @@ batch_norm_param {
 
 }
 top : "BN1_loop8_low3_4"
-bottom: "low2_4_loop8"
+bottom: "inp_loop8_low3_4"
 }
 #relu1_loop8_low3_4
 layer {
@@ -20202,7 +22609,7 @@ mirror : 0
 }
 top : "low3_4_loop8"
 bottom : "Convolution3_loop8_low3_4"
-bottom : "low2_4_loop8"
+bottom : "inp_loop8_low3_4"
 }
 #up2_4_loop8
 layer {
@@ -20232,7 +22639,186 @@ mirror : 0
 
 }
 }
+#residual_loop8
+#inp_residual_loop8
+layer {
+name : "inp_residual_loop8"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
 
+}
+top : "inp_residual_loop8"
+bottom: "hg_loop8"
+}
+#batchnorm1_residual_loop8
+layer {
+name : "BN1_residual_loop8"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN1_residual_loop8"
+bottom: "inp_residual_loop8"
+}
+#relu1_residual_loop8
+layer {
+name : "ReLU1_residual_loop8"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU1_residual_loop8"
+bottom : "BN1_residual_loop8"
+}
+#conv1_residual_loop8
+layer {
+name : "Convolution1_residual_loop8"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution1_residual_loop8"
+bottom : "ReLU1_residual_loop8"
+}
+#batchnorm2_residual_loop8
+layer {
+name : "BN2_residual_loop8"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN2_residual_loop8"
+bottom : "Convolution1_residual_loop8"
+}
+#relu2_residual_loop8
+layer {
+name : "ReLU2_residual_loop8"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU2_residual_loop8"
+bottom : "BN2_residual_loop8"
+}
+#conv2_residual_loop8
+layer {
+name : "Convolution2_residual_loop8"
+type : "Convolution"
+convolution_param {
+num_output: 128
+kernel_size: 3
+stride: 1
+pad: 1
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution2_residual_loop8"
+bottom : "ReLU2_residual_loop8"
+}
+#batchnorm3_residual_loop8
+layer {
+name : "BN3_residual_loop8"
+type: "BatchNorm"
+batch_norm_param {
+
+
+}
+top : "BN3_residual_loop8"
+bottom : "Convolution2_residual_loop8"
+}
+#relu3_residual_loop8
+layer {
+name : "ReLU3_residual_loop8"
+type : "ReLU"
+relu_param {
+negative_slope : 0
+}
+top : "ReLU3_residual_loop8"
+bottom : "BN3_residual_loop8"
+}
+#conv3_residual_loop8
+layer {
+name : "Convolution3_residual_loop8"
+type : "Convolution"
+convolution_param {
+num_output: 256
+kernel_size: 1
+stride: 1  
+weight_filler {
+type : "xavier"
+}
+bias_filler {
+type : "constant"
+value : 0
+}
+}
+param {
+lr_mult : 1
+decay_mult : 1
+}
+param {
+lr_mult : 2
+decay_mult : 0
+}
+
+top : "Convolution3_residual_loop8"
+bottom : "ReLU3_residual_loop8"
+}
+#out_residual_loop8
+layer {
+name : "out_residual_loop8"
+type : "Concat"
+data_param {
+backend : LMDB
+}
+transform_param {
+scale : 1
+mirror : 0
+
+}
+top : "residual_loop8"
+bottom : "Convolution3_residual_loop8"
+bottom : "inp_residual_loop8"
+}
 #lin_loop8
 #conv1_lin_loop8
 layer {
@@ -20260,7 +22846,7 @@ decay_mult : 0
 }
 
 top : "Convolution_lin_loop8"
-bottom : "hg_loop8"
+bottom : "residual_loop8"
 }
 #batchnorm_lin_loop8
 layer {
