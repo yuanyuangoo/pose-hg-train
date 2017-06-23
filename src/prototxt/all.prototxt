@@ -1,33 +1,23 @@
 name: "hourglass"
-#input
-#layer {
-#name: "input"
-#type: ""
-#top: "input"
-#input_param { shape: { dim: 1 dim: 3 dim: 256 dim: 256 } }
-#}
 layer {
-  name: "mnist"
-  # Data layer loads leveldb or lmdb storage DBs for high-throughput.
-  type: "Data"
-  # the 1st top is the data itself: the name is only convention
-  top: "input"
-  # the 2nd top is the ground truth: the name is only convention
-  top: "label"
-  # the Data layer configuration
-  data_param {
-    # path to the DB
-    source: "examples/mnist/mnist_train_lmdb"
-    # type of DB: LEVELDB or LMDB (LMDB supports concurrent reads)
-    backend: LMDB
-    # batch processing improves efficiency.
-    batch_size: 64
-  }
-  # common data transformations
-  transform_param {
-    # feature scaling coefficient: this maps the [0, 255] MNIST data to [0, 1]
-    scale: 0.00390625
-  }
+    name: "data"
+    type: "Data"
+    top: "data"
+    top: "label"
+    include {
+        phase: TRAIN # 表明这是在训练阶段才包括进去
+    }
+    transform_param { # 对数据进行预处理
+        mirror: true # 是否做镜像
+        crop_size: 227
+        # 减去均值文件
+        mean_file: "data/ilsvrc12/imagenet_mean.binaryproto"
+    }
+    data_param { # 设定数据的来源
+        source: "examples/imagenet/ilsvrc12_train_lmdb"
+        batch_size: 256
+        backend: LMDB
+    }
 }
 #cnv1_
 layer {
