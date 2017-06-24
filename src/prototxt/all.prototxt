@@ -1,29 +1,53 @@
-name: "hourglass"
 layer {
-    name: "data"
-    type: "Data"
-    top: "data"
-    top: "label"
-    include {
-        phase: TRAIN # 表明这是在训练阶段才包括进去
-    }
-    transform_param { # 对数据进行预处理
-        mirror: true # 是否做镜像
-        crop_size: 227
-        # 减去均值文件
-        mean_file: "data/ilsvrc12/imagenet_mean.binaryproto"
-    }
-    data_param { # 设定数据的来源
-        source: "examples/imagenet/ilsvrc12_train_lmdb"
-        batch_size: 256
-        backend: LMDB
-    }
+  name: "data"
+  type: "CPMData"
+  top: "data"
+  top: "label"
+  transform_param {
+    stride: 8
+    max_rotate_degree: 40
+    crop_size_x: 277
+    crop_size_y: 277
+    scale_prob: 1
+    scale_min: 0.7
+    scale_max: 1.3
+    target_dist: 1.171
+    center_perterb_max: 0
+    do_clahe: false
+  }
+  cpmdata_param {
+    source: "lmdb/MPI_validation"
+    batch_size: 16
+    backend: LMDB
+  }
+}
+layer {
+  name: "image"
+  type: "Slice"
+  bottom: "data"
+  top: "image"
+  top: "center_map"
+  slice_param {
+    slice_point: 3
+    axis: 1
+  }
+}
+layer {
+  name: "label_lower"
+  type: "Slice"
+  bottom: "label"
+  top: "label_lower"
+  top: "label_1st_lower"
+  slice_param {
+    slice_point: 15
+    axis: 1
+  }
 }
 #cnv1_
 layer {
 name: "cnv1_"
 type: "Convolution"
-bottom: "input"
+bottom: "center_map"
 top: "cnv1_"
 # learning rate and decay multipliers for the filters
 param { lr_mult: 1 decay_mult: 1 }
@@ -22886,4 +22910,21 @@ decay_mult : 0
 
 top : "output"
 bottom : "lin_loop8"
+}
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "output"
+  bottom: "label"
+  top: "accuracy"
+  include {
+    phase: TEST
+  }
+}
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "output"
+  bottom: "label"
+  top: "loss"
 }

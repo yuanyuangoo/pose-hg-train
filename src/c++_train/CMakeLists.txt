@@ -12,14 +12,14 @@ find_package( Boost COMPONENTS thread system filesystem REQUIRED ) #whatever lib
 
 include_directories(
     ${Caffe_INCLUDE_DIRS}
-    /home/a/Downloads/caffe/include
-    /home/a/Downloads/caffe/build/src
+    ~/Downloads/convolutional-pose-machines-release/caffe/include
+    ~/Downloads/convolutional-pose-machines-release/caffe/build/src
     /usr/local/cuda-8.0/include
 ${Boost_INCLUDE_DIRS}
 )
 
 link_directories(/usr/local/cuda-8.0/lib64/)
-set(Caffe_LIBRARIES "/home/a/Downloads/caffe/build/lib/libcaffe.so")
+set(Caffe_LIBRARIES "/home/a/Downloads/convolutional-pose-machines-release/caffe/release/lib/libcaffe.so")
 
 add_definitions(${Caffe_DEFINITIONS})
 add_executable( train caffe.cpp)
